@@ -1,0 +1,5 @@
+# --- Evaluation & Metrics (evaluate.py) ---
+pandas
+bert-score
+torch
+numpy

@@ -25,21 +25,28 @@ from werkzeug.utils import secure_filename
 load_dotenv() # Membaca variabel dari file .env (seperti GEMINI_API_KEY)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+# Cek apakah dijalankan di Vercel (karena Vercel read-only, hanya bisa nulis di /tmp)
+IS_VERCEL = os.environ.get('VERCEL') == '1'
+
 app = Flask(__name__)
 # Secret key diperlukan untuk Sistem Session (Fitur Login Admin)
 app.secret_key = 'skripsi-sorong-2026'
 
 # Menetapkan folder tempat menyimpan file dokumen PDF
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
+if not IS_VERCEL and not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
+
+# Konfigurasi Path Dinamis untuk Vercel
+DB_PATH = '/tmp/stats.db' if IS_VERCEL else 'stats.db'
+FAISS_INDEX_PATH = '/tmp/faiss_index' if IS_VERCEL else os.path.join(basedir, "faiss_index")
 
 # ---------------------------------------------------------
 # 2. INISIALISASI DATABASE (SQLite)
 # ---------------------------------------------------------
 def init_db():
     """Membuat tabel db jika belum ada. Untuk log pengunjung dan token."""
-    conn = sqlite3.connect('stats.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     # Tabel visitors mencatat jumlah kunjungan harian
     cursor.execute('CREATE TABLE IF NOT EXISTS visitors (date TEXT PRIMARY KEY, count INTEGER)')
@@ -51,7 +58,7 @@ def init_db():
 def log_visit():
     """Menambah '+1' pada jumlah kunjungan di hari ini saat orang membuka web."""
     today = datetime.date.today().isoformat()
-    conn = sqlite3.connect('stats.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.execute("INSERT OR IGNORE INTO visitors (date, count) VALUES (?, 0)", (today,))
     conn.execute("UPDATE visitors SET count = count + 1 WHERE date = ?", (today,))
     conn.commit()
@@ -66,8 +73,6 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # Model Embedding untuk mencerna teks PDF mentah menjadi vektor angka
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2", google_api_key=os.getenv("GEMINI_API_KEY"))
 vector_store = None
-
-FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
 
 def initialize_rag(force_rebuild=False):
     """
@@ -224,7 +229,7 @@ Data pedoman:
         # Catat biaya token prompt dan balasan setelah stream selesai
         try:
             tokens = len(prompt.split()) + len(full_response.split())
-            conn = sqlite3.connect('stats.db')
+            conn = sqlite3.connect(DB_PATH)
             conn.execute("INSERT INTO usage (tokens, ts) VALUES (?, ?)", (tokens, datetime.datetime.now()))
             conn.commit()
             conn.close()
@@ -245,7 +250,7 @@ def login():
 @app.route('/api/admin_stats')
 def admin_stats():
     """Sajikan Data Statistik Pengunjung, Total Token Pemakaian dan Total PDF"""
-    conn = sqlite3.connect('stats.db')
+    conn = sqlite3.connect(DB_PATH)
     v = conn.execute("SELECT * FROM visitors ORDER BY date DESC LIMIT 7").fetchall()
     t = conn.execute("SELECT SUM(tokens) FROM usage").fetchone()[0] or 0
     conn.close()
@@ -255,7 +260,7 @@ def admin_stats():
 def clear_stats():
     """Menghapus data log pengunjung dan usage (reset)"""
     try:
-        conn = sqlite3.connect('stats.db')
+        conn = sqlite3.connect(DB_PATH)
         conn.execute("DELETE FROM visitors")
         conn.execute("DELETE FROM usage")
         conn.commit()
@@ -272,6 +277,9 @@ def list_files():
 @app.route('/api/upload_pdf', methods=['POST'])
 def upload():
     """Menerima unggahan File PDF dan merekam ulang ke memori AI (RAG)."""
+    if IS_VERCEL:
+        return jsonify({"success": False, "error": "Vercel bersifat Read-Only. Tidak bisa upload PDF baru di server Vercel."}), 403
+        
     f = request.files.get('file')
     if f:
         filename = secure_filename(f.filename)
@@ -283,6 +291,9 @@ def upload():
 @app.route('/api/delete_file', methods=['POST'])
 def delete():
     """Menghapus PDF tertentu dari folder Data dan menyesuaikan otak AI."""
+    if IS_VERCEL:
+        return jsonify({"success": False, "error": "Vercel bersifat Read-Only. Tidak bisa menghapus PDF di server Vercel."}), 403
+        
     fn = request.json.get('filename')
     try:
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], fn))
