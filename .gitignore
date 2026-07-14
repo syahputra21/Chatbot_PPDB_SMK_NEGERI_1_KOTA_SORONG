@@ -1,0 +1,23 @@
+# Environments
+venv/
+.env
+
+# Cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Databases
+stats.db
+*.sqlite3
+
+# Faiss Index (vector database usually ignored if dynamically generated)
+faiss_index/
+
+# Temp HTML
+temp.html

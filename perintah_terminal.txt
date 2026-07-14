@@ -1,0 +1,17 @@
+Remove-Item -Recurse -Force venv
+python -m venv venv
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\venv\Scripts\activate
+cd chatbot_ppdb_smk1
+pip install -r requirements.txt
+python app.py
+
+
+
+
+
+==================================================
+🔑 AKUN ADMIN DEFAULT (Untuk Login):
+   Username : admin
+   Password : admin123
+==================================================

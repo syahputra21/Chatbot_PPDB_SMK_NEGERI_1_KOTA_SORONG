@@ -1,0 +1,19 @@
+# --- Core Web App ---
+Flask
+python-dotenv
+Werkzeug
+
+# --- AI & RAG Backend ---
+google-genai
+pypdf
+langchain-core
+langchain-community
+langchain-google-genai
+langchain-text-splitters
+faiss-cpu
+
+# --- Evaluation & Metrics (evaluate.py) ---
+pandas
+bert-score
+torch
+numpy
