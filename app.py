@@ -39,7 +39,7 @@ if not IS_VERCEL and not os.path.exists(app.config['UPLOAD_FOLDER']):
 
 # Konfigurasi Path Dinamis untuk Vercel
 DB_PATH = '/tmp/stats.db' if IS_VERCEL else 'stats.db'
-FAISS_INDEX_PATH = '/tmp/faiss_index' if IS_VERCEL else os.path.join(basedir, "faiss_index")
+FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
 
 # ---------------------------------------------------------
 # 2. INISIALISASI DATABASE (SQLite)
@@ -87,8 +87,13 @@ def initialize_rag(force_rebuild=False):
             print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal!")
             return
         except Exception as e:
-            print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
+            print(f"[WARNING] Gagal memuat index lokal: {e}.")
+            
+    if IS_VERCEL:
+        print("[WARNING] Berjalan di Vercel, proses indexing FAISS baru dilewati untuk mencegah timeout.")
+        return
 
+    print("[INFO] Membangun ulang Index RAG (FAISS)...")
     all_text = ""
     # 1. Baca semua file di folder "data" yang berakhiran ".pdf"
     for f in os.listdir(app.config['UPLOAD_FOLDER']):
