@@ -29,13 +29,13 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
-<body class="min-h-screen bg-slate-50 font-inter overflow-hidden relative">
+<body class="min-h-[100dvh] bg-slate-50 font-inter overflow-hidden relative">
 
     <!-- Ambient Background Blobs -->
     <div class="blob-shape blob-1 pointer-events-none opacity-50"></div>
     <div class="blob-shape blob-2 pointer-events-none opacity-50" style="bottom: 0; right: -100px;"></div>
 
-    <main class="h-screen w-full relative z-10 flex">
+    <main class="h-[100dvh] w-full relative z-10 flex">
         
         <!-- SIDEBAR (Riwayat Percakapan) -->
         <aside id="sidebar" class="w-80 bg-white/95 border-r border-slate-200/50 flex flex-col h-full flex-shrink-0 z-40 absolute md:relative transition-all duration-300 transform -translate-x-full md:translate-x-0 md:ml-0 shadow-[10px_0_30px_rgba(0,0,0,0.02)]">
@@ -105,7 +105,7 @@
             </div>
 
             <!-- Input area -->
-            <div id="chat-input-wrapper" class="w-full max-w-4xl px-4 md:px-8 z-20 pb-8 mt-auto relative">
+            <div id="chat-input-wrapper" class="w-full max-w-4xl px-4 md:px-8 z-20 pb-4 md:pb-8 mt-auto relative">
                 <div class="relative bg-white/95 border border-white rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.08)] p-2.5 flex items-center focus-within:shadow-[0_15px_50px_rgba(60,89,165,0.15)] focus-within:border-sekolah-blue/30 transition-all">
                     <input type="text" id="user-input" class="w-full bg-transparent border-none px-5 py-3 focus:outline-none focus:ring-0 text-slate-700 placeholder:text-slate-400 text-base font-medium" placeholder="Tanyakan seputar pendaftaran, jurusan, dll...">
                     

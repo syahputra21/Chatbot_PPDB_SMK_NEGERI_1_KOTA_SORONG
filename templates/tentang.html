@@ -34,7 +34,7 @@
     <div class="blob-shape blob-3 pointer-events-none" style="top: 10%; left: 80%;"></div>
 
     <!-- NAVIGATION -->
-    <nav class="absolute md:fixed w-full z-50 bg-sekolah-blue transition-all duration-300 shadow-md" id="navbar">
+    <nav class="fixed top-0 w-full z-50 bg-sekolah-blue transition-all duration-300 shadow-md" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <a href="/" class="flex items-center gap-3 cursor-pointer group">
@@ -79,8 +79,8 @@
             </div>
         </div>
 
-        <div id="mobile-menu"
-            class="hidden md:hidden bg-sekolah-blue border-t border-white/10 absolute w-full left-0 shadow-2xl">
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-sekolah-blue border-t border-white/10 absolute top-full w-full left-0 shadow-2xl">
             <div class="px-4 pt-2 pb-6 space-y-2 flex flex-col font-outfit">
                 <a href="/"
                     class="text-white hover:text-sekolah-orange block px-3 py-3 rounded-md text-base font-semibold border-b border-white/10">Beranda</a>
