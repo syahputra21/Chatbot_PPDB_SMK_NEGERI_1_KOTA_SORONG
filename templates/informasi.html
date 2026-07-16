@@ -35,7 +35,7 @@
     <div class="blob-shape blob-2 pointer-events-none"></div>
 
     <!-- NAVIGATION -->
-    <nav class="fixed w-full z-50 nav-glass transition-all duration-300" id="navbar">
+    <nav class="absolute md:fixed w-full z-50 bg-sekolah-blue transition-all duration-300 shadow-md" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <a href="/" class="flex items-center gap-3 cursor-pointer group">
@@ -70,7 +70,7 @@
             </div>
         </div>
 
-        <div id="mobile-menu" class="hidden md:hidden bg-sekolah-blue/95 backdrop-blur-xl border-t border-white/10 absolute w-full left-0 shadow-2xl">
+        <div id="mobile-menu" class="hidden md:hidden bg-sekolah-blue border-t border-white/10 absolute w-full left-0 shadow-2xl">
             <div class="px-4 pt-2 pb-6 space-y-2 flex flex-col font-outfit">
                 <a href="/" class="text-white hover:text-sekolah-orange block px-3 py-3 rounded-md text-base font-semibold border-b border-white/10">Beranda</a>
                 <a href="/informasi" class="text-white hover:text-sekolah-orange block px-3 py-3 rounded-md text-base font-semibold border-b border-white/10">Informasi PPDB</a>
@@ -109,104 +109,89 @@
         <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-[80px]"></div>
         <div class="relative z-10 max-w-4xl mx-auto px-6 animate-reveal">
-            <h1 class="font-outfit text-4xl md:text-6xl font-black text-white mb-4 tracking-tight drop-shadow-lg">Informasi PPDB 2026</h1>
+            <h1 class="font-outfit text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 tracking-tight drop-shadow-lg">Informasi PPDB {{ config.tahun_ajaran }}</h1>
             <p class="text-blue-100 text-lg md:text-xl font-light max-w-2xl mx-auto">Semua hal yang perlu Anda ketahui tentang tahapan, syarat, dan pilihan program keahlian di SMKN 1 Kota Sorong.</p>
         </div>
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16 w-full relative z-10">
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-10 md:space-y-16 w-full relative z-10">
         
         <!-- 1. JADWAL -->
-        <section class="glass-card rounded-[2.5rem] p-8 md:p-12 animate-reveal delay-100 group relative overflow-hidden">
+        <section class="glass-card rounded-[1.5rem] md:rounded-[2.5rem] p-6 sm:p-8 md:p-12 animate-reveal delay-100 group relative overflow-hidden">
             <div class="flex items-center gap-4 mb-10 relative z-10">
                 <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-white text-sekolah-blue rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-3 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
-                <h2 class="font-outfit text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">Jadwal Pelaksanaan</h2>
+                <h2 class="font-outfit text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">Jadwal Pelaksanaan</h2>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 relative z-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 relative z-10">
                 <!-- Tahap 1 -->
                 <div class="bg-white border border-blue-100 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                     <div class="inline-block px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs rounded-full mb-4">Tahap 1</div>
                     <h3 class="font-outfit font-bold text-slate-800 text-xl mb-2">Pendaftaran</h3>
-                    <p class="text-slate-500 font-medium text-sm">17 - 20 Juni 2026</p>
+                    <p class="text-slate-500 font-medium text-sm">{{ config.tahap1_tanggal }}</p>
                 </div>
                 <!-- Tahap 2 -->
                 <div class="bg-white border border-blue-100 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                     <div class="inline-block px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs rounded-full mb-4">Tahap 2</div>
                     <h3 class="font-outfit font-bold text-slate-800 text-xl mb-2">Tes Tertulis</h3>
-                    <p class="text-slate-500 font-medium text-sm">22 Juni 2026</p>
+                    <p class="text-slate-500 font-medium text-sm">{{ config.tahap2_tanggal }}</p>
                 </div>
                 <!-- Tahap 3 -->
                 <div class="bg-white border border-blue-100 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                     <div class="inline-block px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs rounded-full mb-4">Tahap 3</div>
                     <h3 class="font-outfit font-bold text-slate-800 text-xl mb-2">Pengumuman</h3>
-                    <p class="text-slate-500 font-medium text-sm">24 Juni 2026</p>
+                    <p class="text-slate-500 font-medium text-sm">{{ config.tahap3_tanggal }}</p>
                 </div>
                 <!-- Tahap 4 -->
                 <div class="bg-white border border-blue-100 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                     <div class="inline-block px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs rounded-full mb-4">Tahap 4</div>
                     <h3 class="font-outfit font-bold text-slate-800 text-xl mb-2">Daftar Ulang</h3>
-                    <p class="text-slate-500 font-medium text-sm">25 - 27 Juni 2026</p>
+                    <p class="text-slate-500 font-medium text-sm">{{ config.tahap4_tanggal }}</p>
                 </div>
                 <!-- Info -->
                 <div class="bg-gradient-to-b from-orange-50 to-orange-100/50 border border-orange-200 p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
                     <div class="inline-block px-3 py-1 bg-white text-orange-700 font-bold text-xs rounded-full mb-4 shadow-sm">Pusat Informasi</div>
                     <h3 class="font-outfit font-bold text-slate-800 text-xl mb-2">Jam Pelayanan</h3>
-                    <p class="text-slate-500 font-medium text-sm">08.00 - 14.00 WIT</p>
+                    <p class="text-slate-500 font-medium text-sm">{{ config.jam_pelayanan }}</p>
                 </div>
             </div>
         </section>
 
         <!-- 2. PERSYARATAN & JURUSAN -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
             <!-- Persyaratan -->
-            <section class="glass-card rounded-[2.5rem] p-8 md:p-12 animate-reveal delay-200 group">
+            <section class="glass-card rounded-[1.5rem] md:rounded-[2.5rem] p-6 sm:p-8 md:p-12 animate-reveal delay-200 group">
                 <div class="flex items-center gap-4 mb-8">
                     <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-white text-indigo-600 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-3 transition-transform">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
-                    <h2 class="font-outfit text-3xl font-bold text-slate-800 tracking-tight">Persyaratan</h2>
+                    <h2 class="font-outfit text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">Persyaratan</h2>
                 </div>
                 
                 <div class="bg-white/50 border border-white p-6 rounded-2xl shadow-sm">
                     <ul class="space-y-4">
-                        <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Usia maksimal 21 tahun (per 1 Juli 2026),</span>
-                        </li>
-                        <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Fotokopi Surat Keterangan Lulus SMP/MTs/Paket B,</span>
-                        </li>
-                        <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Fotokopi Kartu Keluarga dan fotokopi Akte Kelahiran,</span>
-                        </li>
-                        <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Fotokopi KPS/PKH/KIP (jika ada : 1 lembar, perbesar),</span>
-                        </li>
-                        <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Fotokopi Rapor Semester 1 - Semester 5,</span>
-                        </li>
-                        <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Fotokopi Sertifikat TKA,</span>
-                        </li>
-                        <li class="flex items-start gap-4 p-3 bg-orange-50/50 rounded-xl border border-orange-100/50">
-                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-sekolah-orange flex items-center justify-center font-bold text-sm shadow-sm">★</span> 
-                            <span class="text-slate-600 font-medium pt-1 text-sm">Membawa Sertifikat/Piagam/Penghargaan asli (Jalur Prestasi).</span>
-                        </li>
+                        {% for item in config.persyaratan %}
+                            {% if item.startswith('*') %}
+                            <li class="flex items-start gap-4 p-3 bg-orange-50/50 rounded-xl border border-orange-100/50">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 text-sekolah-orange flex items-center justify-center font-bold text-sm shadow-sm">★</span> 
+                                <span class="text-slate-600 font-medium pt-1 text-sm">{{ item[1:] }}</span>
+                            </li>
+                            {% else %}
+                            <li class="flex items-start gap-4 p-3 hover:bg-white rounded-xl transition-colors">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-sekolah-blue flex items-center justify-center font-bold text-sm shadow-sm">✓</span> 
+                                <span class="text-slate-600 font-medium pt-1 text-sm">{{ item }}</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
                     </ul>
                 </div>
             </section>
 
             <!-- Jurusan -->
-            <section class="bg-gradient-to-br from-sekolah-blue to-[#2a417a] rounded-[2.5rem] shadow-2xl p-8 md:p-12 animate-reveal delay-300 text-white relative overflow-hidden group h-fit">
+            <section class="bg-gradient-to-br from-sekolah-blue to-[#2a417a] rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl p-6 sm:p-8 md:p-12 animate-reveal delay-300 text-white relative overflow-hidden group h-fit">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl"></div>
                 <div class="absolute bottom-0 left-0 w-40 h-40 bg-sekolah-orange opacity-20 rounded-full blur-2xl"></div>
                 
@@ -215,46 +200,19 @@
                         <div class="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl flex items-center justify-center shadow-md">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                         </div>
-                        <h2 class="font-outfit text-3xl font-bold tracking-tight text-white">Program Keahlian</h2>
+                        <h2 class="font-outfit text-2xl sm:text-3xl font-bold tracking-tight text-white">Program Keahlian</h2>
                     </div>
                     
                     <div class="space-y-3 h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Akuntansi & Keuangan Lembaga</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">3 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Manajemen Perkantoran & Layanan Bisnis</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">3 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Pemasaran (Kelas Alfamart)</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">2 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Teknik Jaringan Komputer & Telekomunikasi</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">4 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Desain Komunikasi Visual</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">2 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Pengembangan Perangkat Lunak & Gim</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">1 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Teknik Geologi Pertambangan</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">Program 4 Tahun, 2 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Teknik Perminyakan</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">1 Kelas</span>
-                        </div>
-                        <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
-                            <h3 class="font-bold text-sm leading-snug">Teknik Energi Terbarukan</h3>
-                            <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">1 Kelas</span>
-                        </div>
+                        {% for prog in config.program_keahlian %}
+                            {% set parts = prog.split('|') %}
+                            <div class="bg-white/10 border border-white/10 p-4 rounded-xl flex justify-between items-center hover:bg-white/20 transition-all backdrop-blur-sm">
+                                <h3 class="font-bold text-sm leading-snug">{{ parts[0] }}</h3>
+                                {% if parts|length > 1 %}
+                                <span class="bg-white text-sekolah-blue text-xs px-3 py-1 rounded-full font-bold shadow-sm">{{ parts[1] }}</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
             </section>
@@ -262,9 +220,9 @@
         
         <!-- CTA Chatbot -->
         <div class="text-center pb-10 pt-16">
-            <h3 class="font-outfit text-3xl font-black text-slate-800 mb-4 tracking-tight">Masih ada pertanyaan spesifik?</h3>
+            <h3 class="font-outfit text-2xl sm:text-3xl font-black text-slate-800 mb-4 tracking-tight">Masih ada pertanyaan spesifik?</h3>
             <p class="text-slate-500 mb-8 font-medium max-w-xl mx-auto">Tanyakan langsung melalui AI pintar kami tentang jalur pendaftaran, kuota, atau syarat khusus lainnya.</p>
-            <a href="/chatbot" class="btn-primary inline-flex items-center gap-2 text-white px-10 py-4 rounded-full font-bold text-lg font-outfit">
+            <a href="/chatbot" class="btn-primary inline-flex items-center justify-center gap-2 text-white px-8 md:px-10 py-4 rounded-full font-bold text-base md:text-lg font-outfit w-full sm:w-auto">
                 Tanya Chatbot Sekarang
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
             </a>
@@ -278,7 +236,7 @@
         <div class="absolute bottom-0 left-0 w-40 h-40 bg-sekolah-orange opacity-10 rounded-full blur-[60px]"></div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-12">
                 <!-- Branding -->
                 <div class="space-y-6 text-center md:text-left">
                     <div class="flex justify-center md:justify-start items-center gap-3">
@@ -286,7 +244,7 @@
                         <span class="font-outfit font-black text-2xl text-white tracking-tight">SMKN 1 Sorong</span>
                     </div>
                     <p class="text-slate-400 text-sm leading-relaxed max-w-sm mx-auto md:mx-0">
-                        Portal Pintar Penerimaan Peserta Didik Baru (PPDB) 2026 didukung penuh oleh Kecerdasan Buatan (AI) untuk melayani informasi secara interaktif.
+                        Portal Pintar Penerimaan Peserta Didik Baru (PPDB) {{ config.tahun_ajaran }} didukung penuh oleh Kecerdasan Buatan (AI) untuk melayani informasi secara interaktif.
                     </p>
                 </div>
                 
@@ -309,7 +267,7 @@
                         <a href="https://www.facebook.com/officialsmkn1sorong" target="_blank" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-600 transition-all shadow-lg hover:-translate-y-1" title="Facebook">
                             <svg fill="currentColor" class="h-4 w-4" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" /></svg>
                         </a>
-                        <a href="https://www.instagram.com/humas.smkn1/" target="_blank" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white hover:bg-pink-600 hover:border-pink-600 transition-all shadow-lg hover:-translate-y-1" title="Instagram">
+                        <a href="https://www.instagram.com/smkn1.official?igsh=MXdyMXl0MTFtaXpocQ==" target="_blank" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white hover:bg-pink-600 hover:border-pink-600 transition-all shadow-lg hover:-translate-y-1" title="Instagram">
                             <svg fill="currentColor" class="h-4 w-4" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clip-rule="evenodd" /></svg>
                         </a>
                         <a href="https://www.tiktok.com/@humas.smkn1" target="_blank" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-black hover:bg-white hover:border-white transition-all shadow-lg hover:-translate-y-1" title="TikTok">
@@ -320,7 +278,7 @@
             </div>
             
             <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-sm text-slate-500 font-medium">© 2026 SMK Negeri 1 Kota Sorong. All rights reserved.</p>
+                <p class="text-sm text-slate-500 font-medium">&copy; {{ config.tahun_ajaran }} SMK Negeri 1 Kota Sorong. All rights reserved.</p>
                 <p class="text-xs text-slate-500">Jl. Pramuka No. 1, Kota Sorong, Papua Barat Daya</p>
             </div>
         </div>

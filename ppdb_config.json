@@ -1,0 +1,38 @@
+{
+    "tahun_ajaran": "2026",
+    "tahap1_tanggal": "17 - 20 Juni 2026",
+    "tahap2_tanggal": "22 Juni 2026",
+    "tahap3_tanggal": "24 Juni 2026",
+    "tahap4_tanggal": "25 - 27 Juni 2026",
+    "jam_pelayanan": "08.00 - 14.00 WIT",
+    "persyaratan": [
+        "Usia maksimal 21 tahun (per 1 Juli 2026),",
+        "Fotokopi Surat Keterangan Lulus SMP/MTs/Paket B,",
+        "Fotokopi Kartu Keluarga dan fotokopi Akte Kelahiran,",
+        "Fotokopi KPS/PKH/KIP (jika ada : 1 lembar, perbesar),",
+        "Fotokopi Rapor Semester 1 - Semester 5,",
+        "Fotokopi Sertifikat TKA,",
+        "*Membawa Sertifikat/Piagam/Penghargaan asli (Jalur Prestasi)."
+    ],
+    "program_keahlian": [
+        "Akuntansi & Keuangan Lembaga|3 Kelas",
+        "Manajemen Perkantoran & Layanan Bisnis|3 Kelas",
+        "Pemasaran (Kelas Alfamart)|2 Kelas",
+        "Teknik Jaringan Komputer & Telekomunikasi|4 Kelas",
+        "Desain Komunikasi Visual|2 Kelas",
+        "Pengembangan Perangkat Lunak & Gim|1 Kelas",
+        "Teknik Geologi Pertambangan|Program 4 Tahun, 2 Kelas",
+        "Teknik Perminyakan|1 Kelas",
+        "Teknik Energi Terbarukan|1 Kelas"
+    ],
+    "kontak": [
+        "Pak Geis: 0821-4908-660",
+        "Pak Kinan: 0821-9751-7930"
+    ],
+    "visi": "Mewujudkan SMK Negeri 1 Sorong, yang berjiwa Pancasila, Merdeka Belajar, Berbudaya Kerja dan Kompetitif.",
+    "misi": [
+        "Menyiapkan Peserta Didik yang Berkarakter Pancasila",
+        "Mengembangkan Sistem Pembelajaran Kurikulum Merdeka",
+        "Menyelenggarakan Kurikulum Merdeka sesuai kebutuhan Dunia Kerja"
+    ]
+}

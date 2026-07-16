@@ -23,7 +23,28 @@
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         outfit: ['Outfit', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
                     }
+                }
+            }
+        }
+        
+        async function clearStats() {
+            if (confirm("Apakah Anda yakin ingin menghapus seluruh log pengunjung?")) {
+                const response = await fetch('/api/clear_stats', { method: 'POST' });
+                if (response.ok) {
+                    alert("Log berhasil dihapus");
+                    loadStats();
+                } else {
+                    alert("Gagal menghapus log");
                 }
             }
         }
@@ -31,7 +52,7 @@
     <style>
         body { background-color: theme('colors.bg-light'); }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease-out forwards; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -39,16 +60,22 @@
     </style>
 </head>
 <body class="flex min-h-screen overflow-hidden font-sans">
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="closeSidebar()" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+    
     <!-- SIDEBAR -->
-    <aside class="w-[260px] bg-sekolah-dark flex flex-col h-screen fixed z-50 transition-all duration-300 shadow-xl border-r border-gray-800">
+    <aside id="admin-sidebar" class="w-[260px] bg-sekolah-dark flex flex-col h-screen fixed z-50 transition-all duration-300 shadow-xl border-r border-gray-800 -translate-x-full lg:translate-x-0">
         <!-- Logo -->
-        <div class="h-[70px] flex items-center justify-center border-b border-white/10 bg-sekolah-dark">
+        <div class="h-[70px] flex items-center justify-between px-6 border-b border-white/10 bg-sekolah-dark relative">
             <div class="flex items-center gap-3 text-white text-xl font-outfit font-bold">
                 <div class="w-8 h-8 bg-white p-1 rounded-md flex items-center justify-center">
                     <img src="/static/images/logo.webp" alt="Logo SMKN 1" class="w-full h-full object-contain">
                 </div>
                 <span>PPDB<span class="text-sekolah-orange">Admin</span></span>
             </div>
+            <button onclick="closeSidebar()" class="lg:hidden text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div>
         
         <!-- Menu -->
@@ -68,6 +95,10 @@
                 <i class="fa-solid fa-file-pdf w-5 text-center text-lg"></i> 
                 <span class="font-medium">Dataset PDF</span>
             </button>
+            <button onclick="switchTab('config')" id="btn-config" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
+                <i class="fa-solid fa-calendar-alt w-5 text-center text-lg"></i> 
+                <span class="font-medium">Pengaturan Informasi</span>
+            </button>
 
             <div class="px-6 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider font-outfit">Lainnya</div>
             <button id="btn-logout" class="w-full flex items-center gap-3 px-6 py-3 text-red-400 hover:text-red-300 hover:bg-white/5 transition-all border-l-4 border-transparent">
@@ -78,11 +109,14 @@
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 ml-[260px] flex flex-col h-screen bg-slate-50">
+    <main class="flex-1 lg:ml-[260px] flex flex-col h-screen bg-slate-50 w-full">
         <!-- TOP HEADER -->
-        <header class="h-[70px] bg-white flex items-center justify-between px-8 shadow-sm z-40 shrink-0 border-b border-gray-200">
-            <div class="flex items-center gap-6">
-                <h1 class="text-2xl font-outfit font-bold text-slate-800" id="main-title">Overview & Grafik</h1>
+        <header class="h-[70px] bg-white flex items-center justify-between px-4 md:px-8 shadow-sm z-40 shrink-0 border-b border-gray-200">
+            <div class="flex items-center gap-4 md:gap-6">
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-500 hover:text-sekolah-blue">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <h1 class="text-lg md:text-2xl font-outfit font-bold text-slate-800 truncate" id="main-title">Overview & Grafik</h1>
             </div>
             <div class="flex items-center gap-4">
                 <div class="text-right hidden md:block">
@@ -95,7 +129,7 @@
         </header>
 
         <!-- CONTENT AREA -->
-        <div class="p-8 overflow-y-auto flex-1">
+        <div class="p-4 md:p-8 overflow-y-auto flex-1">
             
             <!-- Dashboard Tab -->
             <section id="tab-dashboard" class="tab-content active">
@@ -149,18 +183,36 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <h2 class="text-xl font-bold text-slate-800 font-outfit">Log Pengunjung Detail</h2>
-                        <div class="flex gap-2">
-                            <button onclick="clearStats()" class="flex items-center gap-2 text-sm text-red-600 px-4 py-2.5 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                                <i class="fa-solid fa-trash-can"></i> Hapus Log
-                            </button>
-                            <button id="btn-refresh-stats" onclick="loadStats()" class="flex items-center gap-2 text-sm text-slate-600 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <button id="btn-refresh-stats" onclick="loadStats()" class="w-full sm:w-auto justify-center flex items-center gap-2 text-sm text-slate-600 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
                                 <i class="fa-solid fa-rotate-right"></i> Refresh Data
+                            </button>
+                            <a href="/api/export_stats" target="_blank" class="w-full sm:w-auto justify-center flex items-center gap-2 text-sm font-bold text-sekolah-blue px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 hover:scale-105 transition-all">
+                                <i class="fa-solid fa-file-pdf"></i> Download Rekap
+                            </a>
+                            <button onclick="clearStats()" class="w-full sm:w-auto justify-center flex items-center gap-2 text-sm text-red-600 px-4 py-2.5 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                                <i class="fa-solid fa-trash-can"></i> Hapus Log
                             </button>
                         </div>
                     </div>
 
-                    <div class="border border-slate-100 rounded-xl overflow-hidden">
-                        <table class="w-full text-left border-collapse">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col justify-center items-center">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-outfit">Kunjungan Hari Ini</p>
+                            <h3 id="detail-stat-day" class="text-4xl font-black text-sekolah-blue font-outfit">0</h3>
+                        </div>
+                        <div class="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col justify-center items-center">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-outfit">Kunjungan Bulan Ini</p>
+                            <h3 id="detail-stat-month" class="text-4xl font-black text-sekolah-orange font-outfit">0</h3>
+                        </div>
+                        <div class="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col justify-center items-center">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-outfit">Kunjungan Tahun Ini</p>
+                            <h3 id="detail-stat-year" class="text-4xl font-black text-green-500 font-outfit">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-100 rounded-xl overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
                             <thead class="bg-slate-50 border-b border-slate-200">
                                 <tr>
                                     <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider font-outfit">Tanggal</th>
@@ -168,6 +220,25 @@
                                 </tr>
                             </thead>
                             <tbody id="visitor-table" class="divide-y divide-slate-100">
+                                <!-- Data rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-10 flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h2 class="text-xl font-bold text-slate-800 font-outfit">Log Penggunaan API (Berdasarkan IP)</h2>
+                    </div>
+
+                    <div class="border border-slate-100 rounded-xl overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider font-outfit">Alamat IP</th>
+                                    <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider font-outfit">Total Request</th>
+                                    <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider font-outfit">Total Token</th>
+                                </tr>
+                            </thead>
+                            <tbody id="api-table" class="divide-y divide-slate-100">
                                 <!-- Data rows -->
                             </tbody>
                         </table>
@@ -191,11 +262,11 @@
                             </div>
                             
                             <form id="upload-form" class="space-y-5">
-                                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:bg-slate-50 hover:border-sekolah-blue transition-colors cursor-pointer relative">
+                                <div id="drop-area" class="border-2 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:bg-slate-50 hover:border-sekolah-blue transition-colors cursor-pointer relative">
                                     <input type="file" id="pdf-input" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                    <i class="fa-solid fa-file-pdf text-5xl text-slate-300 mb-4"></i>
-                                    <p class="text-sm font-medium text-slate-600 mb-1">Drag & drop file PDF ke sini</p>
-                                    <p class="text-xs text-slate-400">atau klik untuk memilih file dari komputer</p>
+                                    <i id="upload-icon" class="fa-solid fa-file-pdf text-5xl text-slate-300 mb-4 transition-colors"></i>
+                                    <p id="upload-text" class="text-sm font-medium text-slate-600 mb-1">Drag & drop file PDF ke sini</p>
+                                    <p id="upload-subtext" class="text-xs text-slate-400">atau klik untuk memilih file dari komputer</p>
                                 </div>
                                 <button type="submit" class="w-full bg-sekolah-blue text-white py-3.5 rounded-xl font-bold hover:bg-blue-800 transition-colors flex justify-center items-center gap-2 shadow-md">
                                     <i class="fa-solid fa-microchip"></i> Proses & Latih AI Sekarang
@@ -222,6 +293,146 @@
                 </div>
             </section>
 
+            <!-- Pengaturan Informasi Tab -->
+            <section id="tab-config" class="tab-content">
+                <div class="max-w-4xl mx-auto space-y-8">
+                    <!-- Header -->
+                    <div class="flex items-center gap-4 mb-2">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-white text-sekolah-blue rounded-xl flex items-center justify-center shadow-sm">
+                            <i class="fa-solid fa-sliders text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 font-outfit">Pengaturan Informasi PPDB</h2>
+                            <p class="text-sm text-slate-500">Sesuaikan jadwal, persyaratan, dan program keahlian secara langsung.</p>
+                        </div>
+                    </div>
+
+                    <form id="config-form" class="space-y-6">
+                        <!-- Jadwal Section -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="bg-slate-50/80 border-b border-slate-200 px-6 py-4 flex items-center gap-3">
+                                <i class="fa-regular fa-calendar-check text-sekolah-blue text-lg"></i>
+                                <h3 class="font-bold text-slate-800 font-outfit">Jadwal & Waktu Pelayanan</h3>
+                            </div>
+                            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Tahun Ajaran PPDB</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <i class="fa-solid fa-calendar-days"></i>
+                                        </div>
+                                        <input type="text" id="config-tahun" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm" placeholder="Misal: 2026">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Tahap 1 (Pendaftaran)</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </div>
+                                        <input type="text" id="config-tahap1" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm" placeholder="Misal: 17 - 20 Juni 2026">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Tahap 2 (Tes Tertulis)</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </div>
+                                        <input type="text" id="config-tahap2" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm" placeholder="Misal: 22 Juni 2026">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Tahap 3 (Pengumuman)</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </div>
+                                        <input type="text" id="config-tahap3" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm" placeholder="Misal: 24 Juni 2026">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Tahap 4 (Daftar Ulang)</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </div>
+                                        <input type="text" id="config-tahap4" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm" placeholder="Misal: 25 - 27 Juni 2026">
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Jam Pelayanan</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                            <i class="fa-regular fa-clock"></i>
+                                        </div>
+                                        <input type="text" id="config-jam" class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm" placeholder="Misal: 08.00 - 14.00 WIT">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Lanjutan -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="bg-slate-50/80 border-b border-slate-200 px-6 py-4 flex items-center gap-3">
+                                <i class="fa-solid fa-list-check text-sekolah-blue text-lg"></i>
+                                <h3 class="font-bold text-slate-800 font-outfit">Persyaratan & Program Keahlian</h3>
+                            </div>
+                            <div class="p-6 space-y-6">
+                                <div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <label class="block text-sm font-bold text-slate-700">Daftar Persyaratan</label>
+                                        <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">Gunakan bintang (*) di awal untuk poin spesial</span>
+                                    </div>
+                                    <textarea id="config-persyaratan" rows="6" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm leading-relaxed" placeholder="Syarat 1&#10;Syarat 2..."></textarea>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <label class="block text-sm font-bold text-slate-700">Program Keahlian</label>
+                                        <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">Format: Jurusan | Keterangan</span>
+                                    </div>
+                                    <textarea id="config-program" rows="6" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm leading-relaxed" placeholder="Teknik Komputer|4 Kelas&#10;Akuntansi|3 Kelas..."></textarea>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <label class="block text-sm font-bold text-slate-700">Kontak Panitia</label>
+                                        <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">Satu kontak per baris</span>
+                                    </div>
+                                    <textarea id="config-kontak" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm leading-relaxed" placeholder="Pak Geis: 0821-xxx&#10;Bu Dian: 0812-xxx..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visi Misi -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="bg-slate-50/80 border-b border-slate-200 px-6 py-4 flex items-center gap-3">
+                                <i class="fa-solid fa-bullseye text-sekolah-blue text-lg"></i>
+                                <h3 class="font-bold text-slate-800 font-outfit">Visi & Misi</h3>
+                            </div>
+                            <div class="p-6 space-y-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2">Visi Utama</label>
+                                    <textarea id="config-visi" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm leading-relaxed" placeholder="Tuliskan Visi..."></textarea>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <label class="block text-sm font-bold text-slate-700">Misi Sekolah</label>
+                                        <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">Satu baris untuk satu misi</span>
+                                    </div>
+                                    <textarea id="config-misi" rows="5" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sekolah-blue focus:border-transparent transition-all bg-slate-50 hover:bg-white text-sm leading-relaxed" placeholder="Misi 1&#10;Misi 2..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="bg-sekolah-blue text-white px-8 py-3.5 rounded-xl font-bold hover:bg-blue-800 hover:-translate-y-0.5 transition-all flex items-center gap-3 shadow-lg shadow-blue-500/30">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
         </div>
     </main>
 
@@ -229,10 +440,31 @@
         const titles = {
             'dashboard': 'Overview & Grafik',
             'stats': 'Log Pengunjung',
-            'pdf': 'Manajemen Dataset PDF'
+            'pdf': 'Manajemen Dataset PDF',
+            'config': 'Pengaturan Informasi'
         };
 
         let myChart = null;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+                setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+            } else {
+                closeSidebar();
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => backdrop.classList.add('hidden'), 300);
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -251,6 +483,12 @@
 
             if (tabId === 'stats' || tabId === 'dashboard') loadStats();
             if (tabId === 'pdf') loadFiles();
+            if (tabId === 'config') loadConfig();
+            
+            // Tutup sidebar otomatis di perangkat mobile setelah memilih menu
+            if (window.innerWidth < 1024) {
+                closeSidebar();
+            }
         }
 
         async function loadStats() {
@@ -265,24 +503,79 @@
                 const res = await fetch('/api/admin_stats');
                 const data = await res.json();
                 
-                // Update Cards
+                // Update Cards Main Dashboard
                 document.getElementById('stat-main-tokens').innerText = data.total_tokens.toLocaleString();
-                document.getElementById('stat-main-visits').innerText = data.visitors.length > 0 ? data.visitors[0][1] : 0;
+                document.getElementById('stat-main-visits').innerText = data.today_visits.toLocaleString();
                 document.getElementById('stat-file-count').innerText = data.docs_count;
+
+                // Update Detail Stats
+                const statDay = document.getElementById('detail-stat-day');
+                const statMonth = document.getElementById('detail-stat-month');
+                const statYear = document.getElementById('detail-stat-year');
                 
+                if(statDay) statDay.innerText = data.today_visits.toLocaleString();
+                if(statMonth) statMonth.innerText = data.month_visits.toLocaleString();
+                if(statYear) statYear.innerText = data.year_visits.toLocaleString();
+                
+                // Fungsi format tanggal ke bahasa Indonesia
+                function formatDateIndo(dateStr) {
+                    const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                    const d = new Date(dateStr);
+                    if(isNaN(d)) return dateStr;
+                    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                }
+
                 // Update Table
                 const table = document.getElementById('visitor-table');
                 table.innerHTML = '';
                 if (data.visitors.length === 0) {
                     table.innerHTML = `<tr><td colspan="2" class="py-8 text-center text-sm text-slate-500">Tidak ada data pengunjung.</td></tr>`;
                 } else {
+                    const maxVisits = Math.max(...data.visitors.map(v => v[1]));
+                    
                     data.visitors.forEach(v => {
+                        const dateFormatted = formatDateIndo(v[0]);
+                        const count = v[1];
+                        const percentage = maxVisits > 0 ? (count / maxVisits) * 100 : 0;
+                        
                         table.innerHTML += `
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="py-4 px-6 text-sm text-slate-700"><i class="fa-regular fa-calendar mr-2 text-slate-400"></i>${v[0]}</td>
-                                <td class="py-4 px-6 text-sm font-bold text-sekolah-blue">${v[1]} Akses</td>
+                            <tr class="hover:bg-slate-50 transition-colors group border-b border-slate-50 last:border-0">
+                                <td class="py-4 px-6 text-sm text-slate-700 font-medium">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-blue-50 text-sekolah-blue flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <i class="fa-regular fa-calendar-check"></i>
+                                        </div>
+                                        ${dateFormatted}
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center gap-4">
+                                        <span class="w-20 text-sm font-bold text-slate-700 bg-white border border-slate-200 py-1 text-center rounded-lg shadow-sm">${count} Akses</span>
+                                        <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden hidden md:block max-w-[200px]">
+                                            <div class="h-full bg-sekolah-blue rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
                             </tr>`;
                     });
+                }
+
+                // Update API IP Table
+                const apiTable = document.getElementById('api-table');
+                if (apiTable) {
+                    apiTable.innerHTML = '';
+                    if (!data.api_ips || data.api_ips.length === 0) {
+                        apiTable.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-sm text-slate-500">Belum ada data penggunaan API.</td></tr>`;
+                    } else {
+                        data.api_ips.forEach(api => {
+                            apiTable.innerHTML += `
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="py-4 px-6 text-sm font-mono text-slate-700"><i class="fa-solid fa-network-wired mr-2 text-slate-400"></i>${api.ip}</td>
+                                    <td class="py-4 px-6 text-sm font-bold text-slate-700">${api.requests}x</td>
+                                    <td class="py-4 px-6 text-sm font-bold text-sekolah-orange">${api.tokens.toLocaleString()}</td>
+                                </tr>`;
+                        });
+                    }
                 }
 
                 // Update Chart
@@ -293,23 +586,6 @@
                     btnRefresh.innerHTML = originalContent;
                     btnRefresh.disabled = false;
                 }
-            }
-        }
-
-        async function clearStats() {
-            if(!confirm("Ingin menghapus semua log pengunjung dan statistik?")) return;
-            const btn = document.querySelector('button[onclick="clearStats()"]');
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...';
-            btn.disabled = true;
-            try {
-                await fetch('/api/clear_stats', { method: 'POST' });
-                await loadStats();
-            } catch (e) { 
-                console.warn(e); 
-            } finally {
-                btn.innerHTML = orig;
-                btn.disabled = false;
             }
         }
 
@@ -373,7 +649,7 @@
 
         async function loadFiles() {
             try {
-                const res = await fetch('/api/list_files');
+                const res = await fetch('/api/list_files?_t=' + new Date().getTime());
                 const files = await res.json();
                 const container = document.getElementById('file-list');
                 container.innerHTML = '';
@@ -405,10 +681,34 @@
             if(!confirm("Ingin menghapus file dataset ini?")) return; 
             await fetch('/api/delete_file', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({filename}) }); 
             loadFiles(); 
+            loadStats();
         }
 
         const form = document.getElementById('upload-form');
         const input = document.getElementById('pdf-input');
+        
+        // Indikator visual saat file dipilih
+        input.addEventListener('change', () => {
+            const uploadText = document.getElementById('upload-text');
+            const uploadSubtext = document.getElementById('upload-subtext');
+            const uploadIcon = document.getElementById('upload-icon');
+            const dropArea = document.getElementById('drop-area');
+            
+            if (input.files.length > 0) {
+                uploadText.innerText = input.files[0].name;
+                uploadText.classList.add('text-sekolah-blue', 'font-bold');
+                uploadSubtext.innerText = "File siap diproses";
+                uploadIcon.classList.replace('text-slate-300', 'text-sekolah-blue');
+                dropArea.classList.add('border-sekolah-blue', 'bg-blue-50/50');
+            } else {
+                uploadText.innerText = "Drag & drop file PDF ke sini";
+                uploadText.classList.remove('text-sekolah-blue', 'font-bold');
+                uploadSubtext.innerText = "atau klik untuk memilih file dari komputer";
+                uploadIcon.classList.replace('text-sekolah-blue', 'text-slate-300');
+                dropArea.classList.remove('border-sekolah-blue', 'bg-blue-50/50');
+            }
+        });
+
         form.onsubmit = async (e) => {
             e.preventDefault(); 
             if(!input.files[0]) return;
@@ -425,8 +725,73 @@
                 if (res.ok) { 
                     alert("Dataset Berhasil Terupload dan AI telah dilatih ulang!"); 
                     loadFiles(); 
+                    loadStats();
                     input.value = ''; 
+                    input.dispatchEvent(new Event('change')); // Reset tampilan
+                } else {
+                    const data = await res.json();
+                    alert("GAGAL: " + (data.error || "Terjadi kesalahan pada server AI."));
                 }
+            } catch (err) {
+                alert("GAGAL: Tidak dapat terhubung ke server.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/get_config');
+                const data = await res.json();
+                document.getElementById('config-tahun').value = data.tahun_ajaran || '2026';
+                document.getElementById('config-tahap1').value = data.tahap1_tanggal || '';
+                document.getElementById('config-tahap2').value = data.tahap2_tanggal || '';
+                document.getElementById('config-tahap3').value = data.tahap3_tanggal || '';
+                document.getElementById('config-tahap4').value = data.tahap4_tanggal || '';
+                document.getElementById('config-jam').value = data.jam_pelayanan || '';
+                document.getElementById('config-persyaratan').value = (data.persyaratan || []).join('\n');
+                document.getElementById('config-program').value = (data.program_keahlian || []).join('\n');
+                document.getElementById('config-kontak').value = (data.kontak || []).join('\n');
+                document.getElementById('config-visi').value = data.visi || '';
+                document.getElementById('config-misi').value = (data.misi || []).join('\n');
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        document.getElementById('config-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Menyimpan...';
+            btn.disabled = true;
+
+            const data = {
+                tahun_ajaran: document.getElementById('config-tahun').value.trim() || '2026',
+                tahap1_tanggal: document.getElementById('config-tahap1').value,
+                tahap2_tanggal: document.getElementById('config-tahap2').value,
+                tahap3_tanggal: document.getElementById('config-tahap3').value,
+                tahap4_tanggal: document.getElementById('config-tahap4').value,
+                jam_pelayanan: document.getElementById('config-jam').value,
+                persyaratan: document.getElementById('config-persyaratan').value.split('\n').map(s => s.trim()).filter(s => s !== ''),
+                program_keahlian: document.getElementById('config-program').value.split('\n').map(s => s.trim()).filter(s => s !== ''),
+                kontak: document.getElementById('config-kontak').value.split('\n').map(s => s.trim()).filter(s => s !== ''),
+                visi: document.getElementById('config-visi').value.trim(),
+                misi: document.getElementById('config-misi').value.split('\n').map(s => s.trim()).filter(s => s !== '')
+            };
+
+            try {
+                const res = await fetch('/api/save_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert('Pengaturan berhasil disimpan!');
+                }
+            } catch (e) {
+                console.warn(e);
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -438,6 +803,22 @@
             window.location.href = '/'; 
         };
         
+        async function clearStats() {
+            if(!confirm('Anda yakin ingin mereset/menghapus SEMUA log pengunjung dan statistik API?')) return;
+            try {
+                const res = await fetch('/api/clear_stats', {method: 'POST'});
+                const data = await res.json();
+                if (data.success) {
+                    alert('Statistik berhasil direset!');
+                    loadStats();
+                } else {
+                    alert('Gagal mereset statistik.');
+                }
+            } catch (e) {
+                alert('Terjadi kesalahan jaringan.');
+            }
+        }
+
         // Initialize active state
         document.getElementById('btn-dashboard').classList.add('text-white', 'bg-white/5', 'border-sekolah-orange');
         document.getElementById('btn-dashboard').classList.remove('text-gray-300', 'border-transparent');

@@ -1,21 +1,4 @@
-# Environments
-venv/
-.env
-
-# Cache and temporary files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-pip-log.txt
-pip-delete-this-directory.txt
+venv/
 
-# Databases
-stats.db
-*.sqlite3
-
-
-# Temp HTML
-temp.html
+.env

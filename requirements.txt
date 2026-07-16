@@ -11,3 +11,9 @@ langchain-community
 langchain-google-genai
 langchain-text-splitters
 faiss-cpu
+
+# --- Evaluation & Metrics (evaluate.py) ---
+pandas
+bert-score
+torch
+numpy

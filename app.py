@@ -7,6 +7,7 @@
 # =========================================================
 """
 import os
+import json
 import sqlite3
 import datetime
 from flask import Flask, render_template, request, jsonify, session
@@ -25,42 +26,155 @@ from werkzeug.utils import secure_filename
 load_dotenv() # Membaca variabel dari file .env (seperti GEMINI_API_KEY)
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Cek apakah dijalankan di Vercel (karena Vercel read-only, hanya bisa nulis di /tmp)
-IS_VERCEL = os.environ.get('VERCEL') == '1'
-
 app = Flask(__name__)
 # Secret key diperlukan untuk Sistem Session (Fitur Login Admin)
 app.secret_key = 'skripsi-sorong-2026'
 
 # Menetapkan folder tempat menyimpan file dokumen PDF
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
-if not IS_VERCEL and not os.path.exists(app.config['UPLOAD_FOLDER']):
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# Konfigurasi Path Dinamis untuk Vercel
-DB_PATH = '/tmp/stats.db' if IS_VERCEL else 'stats.db'
-FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
+CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
+
+def get_ppdb_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r') as f:
+            data = json.load(f)
+            # Ensure defaults for new fields
+            if "persyaratan" not in data:
+                data["persyaratan"] = [
+                    "Usia maksimal 21 tahun (per 1 Juli 2026),",
+                    "Fotokopi Surat Keterangan Lulus SMP/MTs/Paket B,",
+                    "Fotokopi Kartu Keluarga dan fotokopi Akte Kelahiran,",
+                    "Fotokopi KPS/PKH/KIP (jika ada : 1 lembar, perbesar),",
+                    "Fotokopi Rapor Semester 1 - Semester 5,",
+                    "Fotokopi Sertifikat TKA,",
+                    "*Membawa Sertifikat/Piagam/Penghargaan asli (Jalur Prestasi)."
+                ]
+            if "program_keahlian" not in data:
+                data["program_keahlian"] = [
+                    "Akuntansi & Keuangan Lembaga|3 Kelas",
+                    "Manajemen Perkantoran & Layanan Bisnis|3 Kelas",
+                    "Pemasaran (Kelas Alfamart)|2 Kelas",
+                    "Teknik Jaringan Komputer & Telekomunikasi|4 Kelas",
+                    "Desain Komunikasi Visual|2 Kelas",
+                    "Pengembangan Perangkat Lunak & Gim|1 Kelas",
+                    "Teknik Geologi Pertambangan|Program 4 Tahun, 2 Kelas",
+                    "Teknik Perminyakan|1 Kelas",
+                    "Teknik Energi Terbarukan|1 Kelas"
+                ]
+            if "tahun_ajaran" not in data:
+                data["tahun_ajaran"] = "2026"
+            if "kontak" not in data:
+                data["kontak"] = [
+                    "Pak Geis: 0821-4908-660",
+                    "Pak Kinan: 0821-9751-7930"
+                ]
+            if "visi" not in data:
+                data["visi"] = "Mewujudkan SMK Negeri 1 Sorong, yang berjiwa Pancasila, Merdeka Belajar, Berbudaya Kerja dan Kompetitif."
+            if "misi" not in data:
+                data["misi"] = [
+                    "Menyiapkan Peserta Didik yang Berkarakter Pancasila",
+                    "Mengembangkan Sistem Pembelajaran Kurikulum Merdeka",
+                    "Menyelenggarakan Kurikulum Merdeka sesuai kebutuhan Dunia Kerja"
+                ]
+            return data
+    return {
+        "tahap1_tanggal": "17 - 20 Juni 2026",
+        "tahap2_tanggal": "22 Juni 2026",
+        "tahap3_tanggal": "24 Juni 2026",
+        "tahap4_tanggal": "25 - 27 Juni 2026",
+        "jam_pelayanan": "08.00 - 14.00 WIT",
+        "persyaratan": [
+            "Usia maksimal 21 tahun (per 1 Juli 2026),",
+            "Fotokopi Surat Keterangan Lulus SMP/MTs/Paket B,",
+            "Fotokopi Kartu Keluarga dan fotokopi Akte Kelahiran,",
+            "Fotokopi KPS/PKH/KIP (jika ada : 1 lembar, perbesar),",
+            "Fotokopi Rapor Semester 1 - Semester 5,",
+            "Fotokopi Sertifikat TKA,",
+            "*Membawa Sertifikat/Piagam/Penghargaan asli (Jalur Prestasi)."
+        ],
+        "program_keahlian": [
+            "Akuntansi & Keuangan Lembaga|3 Kelas",
+            "Manajemen Perkantoran & Layanan Bisnis|3 Kelas",
+            "Pemasaran (Kelas Alfamart)|2 Kelas",
+            "Teknik Jaringan Komputer & Telekomunikasi|4 Kelas",
+            "Desain Komunikasi Visual|2 Kelas",
+            "Pengembangan Perangkat Lunak & Gim|1 Kelas",
+            "Teknik Geologi Pertambangan|Program 4 Tahun, 2 Kelas",
+            "Teknik Perminyakan|1 Kelas",
+            "Teknik Energi Terbarukan|1 Kelas"
+        ],
+        "tahun_ajaran": "2026",
+        "kontak": [
+            "Pak Geis: 0821-4908-660",
+            "Pak Kinan: 0821-9751-7930"
+        ],
+        "visi": "Mewujudkan SMK Negeri 1 Sorong, yang berjiwa Pancasila, Merdeka Belajar, Berbudaya Kerja dan Kompetitif.",
+        "misi": [
+            "Menyiapkan Peserta Didik yang Berkarakter Pancasila",
+            "Mengembangkan Sistem Pembelajaran Kurikulum Merdeka",
+            "Menyelenggarakan Kurikulum Merdeka sesuai kebutuhan Dunia Kerja"
+        ]
+    }
+
+def save_ppdb_config(data):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
 
 # ---------------------------------------------------------
 # 2. INISIALISASI DATABASE (SQLite)
 # ---------------------------------------------------------
 def init_db():
     """Membuat tabel db jika belum ada. Untuk log pengunjung dan token."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect('stats.db')
     cursor = conn.cursor()
     # Tabel visitors mencatat jumlah kunjungan harian
-    cursor.execute('CREATE TABLE IF NOT EXISTS visitors (date TEXT PRIMARY KEY, count INTEGER)')
-    # Tabel usage mencatat konsumsi token (berapa banyak AI berpikir)
-    cursor.execute('CREATE TABLE IF NOT EXISTS usage (id INTEGER PRIMARY KEY AUTOINCREMENT, tokens INTEGER, ts DATETIME)')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS visitors (date TEXT PRIMARY KEY, count INTEGER)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS usage (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, tokens INTEGER, ts TIMESTAMP)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS visitor_ips (ip TEXT, date TEXT, time TEXT)''')
+    try:
+        # Migrasi jika kolom time belum ada
+        cursor.execute("ALTER TABLE visitor_ips ADD COLUMN time TEXT")
+    except:
+        pass
+        
+    # Tabel visitor_ips memastikan 1 IP hanya dihitung 1 kali per hari
+    cursor.execute('CREATE TABLE IF NOT EXISTS visitor_ips (ip TEXT, date TEXT, PRIMARY KEY(ip, date))')
     conn.commit()
     conn.close()
 
+def get_client_ip():
+    if request.headers.getlist("X-Forwarded-For"):
+        return request.headers.getlist("X-Forwarded-For")[0].split(',')[0].strip()
+    return request.remote_addr
+
 def log_visit():
-    """Menambah '+1' pada jumlah kunjungan di hari ini saat orang membuka web."""
+    """Menambah '+1' pada jumlah kunjungan di hari ini (dibatasi 1 Perangkat = 1 Hitungan per hari)."""
     today = datetime.date.today().isoformat()
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("INSERT OR IGNORE INTO visitors (date, count) VALUES (?, 0)", (today,))
-    conn.execute("UPDATE visitors SET count = count + 1 WHERE date = ?", (today,))
+    now_time = datetime.datetime.now().strftime("%H:%M:%S")
+    session_key = f"visited_{today}"
+    ip = get_client_ip()
+    
+    conn = sqlite3.connect('stats.db')
+    cursor = conn.cursor()
+    
+    # Deteksi dan simpan IP perangkat yang mengakses web beserta waktunya
+    if ip:
+        # Jika belum tercatat hari ini, tambahkan dengan waktu pertama kali akses
+        cursor.execute("SELECT 1 FROM visitor_ips WHERE ip = ? AND date = ?", (ip, today))
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
+    
+    # Cek apakah perangkat/browser ini sudah berkunjung hari ini via Cookie Sesi
+    if not session.get(session_key):
+        session[session_key] = True
+        session.permanent = True # Simpan cookie secara persisten
+        
+        cursor.execute("INSERT OR IGNORE INTO visitors (date, count) VALUES (?, 0)", (today,))
+        cursor.execute("UPDATE visitors SET count = count + 1 WHERE date = ?", (today,))
+        
     conn.commit()
     conn.close()
 
@@ -73,6 +187,8 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # Model Embedding untuk mencerna teks PDF mentah menjadi vektor angka
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2", google_api_key=os.getenv("GEMINI_API_KEY"))
 vector_store = None
+
+FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
 
 def initialize_rag(force_rebuild=False):
     """
@@ -87,13 +203,8 @@ def initialize_rag(force_rebuild=False):
             print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal!")
             return
         except Exception as e:
-            print(f"[WARNING] Gagal memuat index lokal: {e}.")
-            
-    if IS_VERCEL:
-        print("[WARNING] Berjalan di Vercel, proses indexing FAISS baru dilewati untuk mencegah timeout.")
-        return
+            print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
 
-    print("[INFO] Membangun ulang Index RAG (FAISS)...")
     all_text = ""
     # 1. Baca semua file di folder "data" yang berakhiran ".pdf"
     for f in os.listdir(app.config['UPLOAD_FOLDER']):
@@ -105,13 +216,25 @@ def initialize_rag(force_rebuild=False):
     
     # 3. Masukkan ke memori AI jika teks tidak kosong
     if all_text:
-        # Teks dipotong-potong supaya konteks tidak terputus (overlap diperbesar)
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=300)
+        # Memperbesar chunk size agar jumlah total potongan tidak melanggar Rate Limit API Gemini (100 request)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=300)
         chunks = splitter.split_text(all_text)
         docs = [Document(page_content=t) for t in chunks]
         
-        # Simpan teks hasil potongan tersebut menjadi Searchable Vektor Database (FAISS)
-        vector_store = FAISS.from_documents(docs, embeddings)
+        import time
+        new_vector_store = None
+        batch_size = 20
+        
+        for i in range(0, len(docs), batch_size):
+            batch = docs[i:i+batch_size]
+            if new_vector_store is None:
+                new_vector_store = FAISS.from_documents(batch, embeddings)
+            else:
+                new_vector_store.add_documents(batch)
+            # Memberi jeda tiap pemrosesan batch agar server Google tidak menolak koneksi (Rate limit)
+            time.sleep(3)
+            
+        vector_store = new_vector_store
         vector_store.save_local(FAISS_INDEX_PATH)
         print("[INFO] Sistem RAG (Retrieval-Augmented Generation) Siap dan disimpan ke lokal!")
     else:
@@ -129,7 +252,7 @@ initialize_rag()
 def index_page():
     """Menampilkan halaman muka (Beranda Utama)"""
     log_visit()
-    return render_template('index.html')
+    return render_template('index.html', config=get_ppdb_config())
 
 @app.route('/chatbot')
 def chatbot_page():
@@ -143,7 +266,7 @@ def login_page():
     if session.get('logged_in'):
         from flask import redirect
         return redirect('/admin')
-    return render_template('login.html')
+    return render_template('login.html', config=get_ppdb_config())
 
 @app.route('/admin')
 def admin_page():
@@ -156,12 +279,16 @@ def admin_page():
 @app.route('/informasi')
 def informasi_page():
     """Menampilkan halaman statis berisi informasi, jadwal, dan syarat PPDB"""
-    return render_template('informasi.html')
+    log_visit()
+    config = get_ppdb_config()
+    return render_template('informasi.html', config=config)
 
 @app.route('/tentang')
 def tentang_page():
     """Menampilkan profil sekolah, visi misi, dan Google Maps"""
-    return render_template('tentang.html')
+    log_visit()
+    config = get_ppdb_config()
+    return render_template('tentang.html', config=config)
 
 # ---------------------------------------------------------
 # 5. RUTE API / LOGIKA PEMROSESAN WEB (Backend Controller)
@@ -207,6 +334,9 @@ Data pedoman:
 5. Berikan langsung jawaban Anda sebagai asisten tanpa membuat dialog tambahan.
 6. Buatlah format jawaban yang rapi (paragraf pendek atau poin-poin). Gunakan gaya bahasa yang bersahabat dan tidak kaku.)"""
     
+    # Ambil IP pengunjung SEBELUM generator berjalan agar context Flask request tidak terputus (Error fix)
+    user_ip = get_client_ip()
+    
     def generate():
         import time
         max_retries = 2
@@ -218,10 +348,14 @@ Data pedoman:
                     contents=prompt
                 )
                 full_response = ""
+                exact_tokens = 0
                 for chunk in response_stream:
                     if chunk.text:
                         full_response += chunk.text
                         yield chunk.text
+                    # Menarik data token riil langsung dari mesin Gemini (Google AI)
+                    if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
+                        exact_tokens = chunk.usage_metadata.total_token_count
                 break  # Sukses, keluar dari loop retry, lanjut ke pencatatan token
             except Exception as e:
                 if attempt < max_retries - 1:
@@ -233,13 +367,14 @@ Data pedoman:
                 
         # Catat biaya token prompt dan balasan setelah stream selesai
         try:
-            tokens = len(prompt.split()) + len(full_response.split())
-            conn = sqlite3.connect(DB_PATH)
-            conn.execute("INSERT INTO usage (tokens, ts) VALUES (?, ?)", (tokens, datetime.datetime.now()))
+            # Gunakan data akurat dari Google. Jika kosong, baru gunakan metode perkiraan kata.
+            tokens = exact_tokens if exact_tokens > 0 else (len(prompt.split()) + len(full_response.split()))
+            conn = sqlite3.connect('stats.db')
+            conn.execute("INSERT INTO usage (ip, tokens, ts) VALUES (?, ?, ?)", (user_ip, tokens, datetime.datetime.now()))
             conn.commit()
             conn.close()
-        except:
-            pass
+        except Exception as e:
+            print(f"[WARNING] Gagal mencatat token: {e}")
 
     from flask import Response
     return Response(generate(), mimetype='text/plain')
@@ -255,19 +390,154 @@ def login():
 @app.route('/api/admin_stats')
 def admin_stats():
     """Sajikan Data Statistik Pengunjung, Total Token Pemakaian dan Total PDF"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect('stats.db')
+    
+    today_str = datetime.date.today().isoformat()
+    month_str = today_str[:7]
+    year_str = today_str[:4]
+    
     v = conn.execute("SELECT * FROM visitors ORDER BY date DESC LIMIT 7").fetchall()
+    
+    today_v = conn.execute("SELECT count FROM visitors WHERE date = ?", (today_str,)).fetchone()
+    today_visits = today_v[0] if today_v else 0
+    
+    month_v = conn.execute("SELECT SUM(count) FROM visitors WHERE date LIKE ?", (month_str + '%',)).fetchone()
+    month_visits = month_v[0] if month_v and month_v[0] else 0
+    
+    year_v = conn.execute("SELECT SUM(count) FROM visitors WHERE date LIKE ?", (year_str + '%',)).fetchone()
+    year_visits = year_v[0] if year_v and year_v[0] else 0
+    
     t = conn.execute("SELECT SUM(tokens) FROM usage").fetchone()[0] or 0
+    
+    # Deteksi API per-orang berdasarkan IP (Semua data)
+    api_ips = []
+    try:
+        rows = conn.execute("SELECT ip, COUNT(id) as req_count, SUM(tokens) as total_tokens FROM usage WHERE ip IS NOT NULL GROUP BY ip ORDER BY total_tokens DESC").fetchall()
+        for r in rows:
+            api_ips.append({
+                "ip": r[0] or "Unknown",
+                "requests": r[1],
+                "tokens": r[2]
+            })
+    except:
+        pass
+        
     conn.close()
-    return jsonify({"visitors": v, "total_tokens": t, "docs_count": len(os.listdir(app.config['UPLOAD_FOLDER']))})
+    return jsonify({
+        "visitors": v, 
+        "today_visits": today_visits,
+        "month_visits": month_visits,
+        "year_visits": year_visits,
+        "total_tokens": t, 
+        "docs_count": len(os.listdir(app.config['UPLOAD_FOLDER'])),
+        "api_ips": api_ips
+    })
+
+@app.route('/api/export_stats')
+def export_stats():
+    """Mengunduh rekap statistik (Harian, Bulanan, Tahunan, dan Akses IP) dalam format PDF"""
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+        
+    from fpdf import FPDF
+    import tempfile
+    from flask import send_file
+    
+    conn = sqlite3.connect('stats.db')
+    
+    # Data Keseluruhan
+    today_str = datetime.date.today().isoformat()
+    month_str = today_str[:7]
+    year_str = today_str[:4]
+    
+    today_v = conn.execute("SELECT count FROM visitors WHERE date = ?", (today_str,)).fetchone()
+    today_visits = today_v[0] if today_v else 0
+    
+    month_v = conn.execute("SELECT SUM(count) FROM visitors WHERE date LIKE ?", (month_str + '%',)).fetchone()
+    month_visits = month_v[0] if month_v and month_v[0] else 0
+    
+    year_v = conn.execute("SELECT SUM(count) FROM visitors WHERE date LIKE ?", (year_str + '%',)).fetchone()
+    year_visits = year_v[0] if year_v and year_v[0] else 0
+    
+    # Data Tabel
+    visitors = conn.execute("SELECT date, count FROM visitors ORDER BY date DESC").fetchall()
+    visitor_logs = conn.execute("SELECT ip, date, time FROM visitor_ips ORDER BY date DESC, time DESC").fetchall()
+    api_ips = conn.execute("SELECT ip, COUNT(id), SUM(tokens) FROM usage WHERE ip IS NOT NULL GROUP BY ip ORDER BY SUM(tokens) DESC").fetchall()
+    conn.close()
+    
+    # Buat PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Header
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, "Rekapitulasi Statistik PPDB SMKN 1 Sorong", 0, 1, 'C')
+    pdf.set_font("Arial", size=10)
+    pdf.cell(200, 10, f"Dicetak pada: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", 0, 1, 'C')
+    pdf.ln(10)
+    
+    # Ringkasan Total
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, "1. Ringkasan Pengunjung", 0, 1)
+    pdf.set_font("Arial", size=11)
+    pdf.cell(200, 8, f"   - Kunjungan Hari Ini: {today_visits}", 0, 1)
+    pdf.cell(200, 8, f"   - Kunjungan Bulan Ini: {month_visits}", 0, 1)
+    pdf.cell(200, 8, f"   - Kunjungan Tahun Ini: {year_visits}", 0, 1)
+    pdf.ln(5)
+    
+    # Log Waktu Akses Perangkat
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, "2. Waktu Akses Perangkat (IP)", 0, 1)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(50, 8, "Tanggal", 1)
+    pdf.cell(50, 8, "Waktu Akses", 1)
+    pdf.cell(90, 8, "Alamat IP", 1)
+    pdf.ln()
+    pdf.set_font("Arial", size=10)
+    for row in visitor_logs:
+        pdf.cell(50, 8, str(row[1]), 1)
+        pdf.cell(50, 8, str(row[2]) if row[2] else "-", 1)
+        pdf.cell(90, 8, str(row[0]), 1)
+        pdf.ln()
+    pdf.ln(5)
+    
+    # Log API
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(200, 10, "3. Penggunaan AI Chatbot (Total Token)", 0, 1)
+    pdf.set_font("Arial", 'B', 10)
+    pdf.cell(80, 8, "Alamat IP", 1)
+    pdf.cell(40, 8, "Total Pesan", 1)
+    pdf.cell(70, 8, "Total Token", 1)
+    pdf.ln()
+    pdf.set_font("Arial", size=10)
+    for row in api_ips:
+        pdf.cell(80, 8, str(row[0]), 1)
+        pdf.cell(40, 8, str(row[1]), 1)
+        pdf.cell(70, 8, str(row[2]), 1)
+        pdf.ln()
+        
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+    temp_file.close() # Penting di Windows: Tutup file sebelum fpdf menimpanya
+    pdf.output(temp_file.name)
+    
+    return send_file(temp_file.name, as_attachment=True, download_name="Rekap_Statistik_PPDB.pdf")
 
 @app.route('/api/clear_stats', methods=['POST'])
 def clear_stats():
     """Menghapus data log pengunjung dan usage (reset)"""
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
     try:
-        conn = sqlite3.connect(DB_PATH)
+        # Hapus tanda 'sudah berkunjung' dari browser Admin agar admin bisa mengetes ulang
+        today = datetime.date.today().isoformat()
+        session_key = f"visited_{today}"
+        session.pop(session_key, None)
+        
+        conn = sqlite3.connect('stats.db')
         conn.execute("DELETE FROM visitors")
         conn.execute("DELETE FROM usage")
+        conn.execute("DELETE FROM visitor_ips")
         conn.commit()
         conn.close()
         return jsonify({"success": True})
@@ -282,23 +552,31 @@ def list_files():
 @app.route('/api/upload_pdf', methods=['POST'])
 def upload():
     """Menerima unggahan File PDF dan merekam ulang ke memori AI (RAG)."""
-    if IS_VERCEL:
-        return jsonify({"success": False, "error": "Vercel bersifat Read-Only. Tidak bisa upload PDF baru di server Vercel."}), 403
-        
     f = request.files.get('file')
     if f:
         filename = secure_filename(f.filename)
-        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        initialize_rag(force_rebuild=True) # WAJIB dipanggil agar AI pintar mengenai PDF yang baru saja masuk
-        return jsonify({"success": True})
-    return jsonify({"success": False})
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        f.save(filepath)
+        try:
+            initialize_rag(force_rebuild=True) # WAJIB dipanggil agar AI pintar mengenai PDF yang baru saja masuk
+            return jsonify({"success": True})
+        except Exception as e:
+            try:
+                os.remove(filepath) # Hapus file karena gagal diproses
+                initialize_rag(force_rebuild=False) # Kembalikan state index sebelumnya
+            except:
+                pass
+            
+            error_msg = str(e)
+            if "RESOURCE_EXHAUSTED" in error_msg or "429" in error_msg:
+                error_msg = "Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit."
+                
+            return jsonify({"success": False, "error": error_msg}), 500
+    return jsonify({"success": False, "error": "File tidak valid"}), 400
 
 @app.route('/api/delete_file', methods=['POST'])
 def delete():
     """Menghapus PDF tertentu dari folder Data dan menyesuaikan otak AI."""
-    if IS_VERCEL:
-        return jsonify({"success": False, "error": "Vercel bersifat Read-Only. Tidak bisa menghapus PDF di server Vercel."}), 403
-        
     fn = request.json.get('filename')
     try:
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], fn))
@@ -311,6 +589,22 @@ def delete():
 def logout(): 
     """Keluar dari akun Admin."""
     session.pop('logged_in', None)
+    return jsonify({"success": True})
+
+@app.route('/api/get_config')
+def api_get_config():
+    """Mengambil konfigurasi jadwal untuk panel admin"""
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    return jsonify(get_ppdb_config())
+
+@app.route('/api/save_config', methods=['POST'])
+def api_save_config():
+    """Menyimpan pengaturan jadwal dari panel admin"""
+    if not session.get('logged_in'):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    data = request.json
+    save_ppdb_config(data)
     return jsonify({"success": True})
 
 # ---------------------------------------------------------
