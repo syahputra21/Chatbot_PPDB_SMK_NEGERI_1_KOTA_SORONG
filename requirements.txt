@@ -1,6 +1,5 @@
 # --- Core Web App ---
 Flask
-gunicorn
 python-dotenv
 Werkzeug
 

@@ -11,6 +11,11 @@ import os
 import json
 import sqlite3
 import datetime
+import shutil
+import base64
+import urllib.request
+import urllib.error
+import threading
 from flask import Flask, render_template, request, jsonify, session
 from dotenv import load_dotenv
 from google import genai
@@ -33,9 +38,82 @@ app.secret_key = 'skripsi-sorong-2026'
 
 DB_PATH = os.path.join(basedir, 'stats.db')
 CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
-app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+    DB_PATH = '/tmp/stats.db'
+    CONFIG_FILE = '/tmp/ppdb_config.json'
+    app.config['UPLOAD_FOLDER'] = '/tmp/dataset'
+    try:
+        if not os.path.exists(DB_PATH) and os.path.exists(os.path.join(basedir, 'stats.db')):
+            shutil.copy2(os.path.join(basedir, 'stats.db'), DB_PATH)
+        if not os.path.exists(CONFIG_FILE) and os.path.exists(os.path.join(basedir, 'ppdb_config.json')):
+            shutil.copy2(os.path.join(basedir, 'ppdb_config.json'), CONFIG_FILE)
+        if not os.path.exists('/tmp/dataset') and os.path.exists(os.path.join(basedir, 'dataset')):
+            shutil.copytree(os.path.join(basedir, 'dataset'), '/tmp/dataset')
+    except Exception as e:
+        print(f"[VERCEL WARNING] Gagal menyalin ke /tmp: {e}")
+else:
+    app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+
+def sync_pdf_to_github(filename, filepath=None, action="upload"):
+    """
+    Sinkronisasi otomatis file PDF ke repository GitHub (Auto-Commit dari Vercel/Serverless).
+    Membutuhkan GITHUB_TOKEN di Environment Variables.
+    """
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return
+    
+    repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+    url = f"https://api.github.com/repos/{repo}/contents/dataset/{filename}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Chatbot-PPDB-SMKN1-Sorong"
+    }
+    
+    try:
+        sha = None
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode())
+                sha = data.get("sha")
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+                
+        if action == "upload" and filepath and os.path.exists(filepath):
+            with open(filepath, "rb") as f:
+                content_b64 = base64.b64encode(f.read()).decode("utf-8")
+                
+            payload = {
+                "message": f"feat(dataset): Auto-commit upload {filename} dari Admin Website",
+                "content": content_b64,
+                "branch": "main"
+            }
+            if sha:
+                payload["sha"] = sha
+                
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="PUT")
+            with urllib.request.urlopen(req) as response:
+                print(f"[GITHUB SYNC] Berhasil mengunggah {filename} ke GitHub.")
+                
+        elif action == "delete" and sha:
+            payload = {
+                "message": f"feat(dataset): Auto-commit hapus {filename} dari Admin Website",
+                "sha": sha,
+                "branch": "main"
+            }
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="DELETE")
+            with urllib.request.urlopen(req) as response:
+                print(f"[GITHUB SYNC] Berhasil menghapus {filename} dari GitHub.")
+                
+    except Exception as e:
+        print(f"[GITHUB SYNC WARNING] Gagal sinkronisasi ke GitHub: {e}")
 
 
 def get_ppdb_config():
@@ -594,6 +672,7 @@ def upload():
         f.save(filepath)
         try:
             initialize_rag(force_rebuild=True) # WAJIB dipanggil agar AI pintar mengenai PDF yang baru saja masuk
+            threading.Thread(target=sync_pdf_to_github, args=(filename, filepath, "upload"), daemon=True).start()
             return jsonify({"success": True})
         except Exception as e:
             try:
@@ -616,6 +695,7 @@ def delete():
     try:
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], fn))
         initialize_rag(force_rebuild=True)
+        threading.Thread(target=sync_pdf_to_github, args=(fn, None, "delete"), daemon=True).start()
         return jsonify({"success": True})
     except Exception: 
         return jsonify({"success": False})
