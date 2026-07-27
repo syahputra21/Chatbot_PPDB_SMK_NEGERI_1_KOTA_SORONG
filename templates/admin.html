@@ -114,7 +114,7 @@
             <button onclick="switchTab('dashboard')" id="btn-dashboard"
                 class="sidebar-item active w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
                 <i class="fa-solid fa-gauge-high w-5 text-center text-lg"></i>
-                <span class="font-medium">Overview & Grafik</span>
+                <span class="font-medium">Dashboard PPDB</span>
             </button>
 
             <div class="px-6 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider font-outfit">Data Master
@@ -122,17 +122,17 @@
             <button onclick="switchTab('stats')" id="btn-stats"
                 class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
                 <i class="fa-solid fa-users w-5 text-center text-lg"></i>
-                <span class="font-medium">Log Pengunjung</span>
+                <span class="font-medium">Riwayat Pengunjung</span>
             </button>
             <button onclick="switchTab('pdf')" id="btn-pdf"
                 class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
                 <i class="fa-solid fa-file-pdf w-5 text-center text-lg"></i>
-                <span class="font-medium">Dataset PDF</span>
+                <span class="font-medium">Dokumen & Dataset PPDB</span>
             </button>
             <button onclick="switchTab('config')" id="btn-config"
                 class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
                 <i class="fa-solid fa-calendar-alt w-5 text-center text-lg"></i>
-                <span class="font-medium">Pengaturan Informasi</span>
+                <span class="font-medium">Jadwal & Syarat PPDB</span>
             </button>
 
             <div class="px-6 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider font-outfit">Lainnya
@@ -175,21 +175,8 @@
             <section id="tab-dashboard" class="tab-content active">
                 <div class="space-y-6">
                     <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Card 1 -->
-                        <div
-                            class="p-6 rounded-2xl border border-slate-200 flex items-center justify-between bg-white shadow-sm hover:shadow-md transition-shadow">
-                            <div>
-                                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 font-outfit">
-                                    Kunjungan Hari Ini</p>
-                                <h3 id="stat-main-visits" class="text-3xl font-black text-slate-800 font-outfit">0</h3>
-                            </div>
-                            <div
-                                class="w-14 h-14 rounded-full bg-blue-50 text-sekolah-blue flex items-center justify-center text-2xl">
-                                <i class="fa-solid fa-chart-line"></i>
-                            </div>
-                        </div>
-                        <!-- Card 2 -->
                         <div
                             class="p-6 rounded-2xl border border-slate-200 flex items-center justify-between bg-white shadow-sm hover:shadow-md transition-shadow">
                             <div>
@@ -202,7 +189,7 @@
                                 <i class="fa-solid fa-microchip"></i>
                             </div>
                         </div>
-                        <!-- Card 3 -->
+                        <!-- Card 2 -->
                         <div
                             class="p-6 rounded-2xl border border-slate-200 flex items-center justify-between bg-white shadow-sm hover:shadow-md transition-shadow">
                             <div>
@@ -219,8 +206,7 @@
 
                     <!-- Grafik Chart.js -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                        <h2 class="text-xl font-bold text-slate-800 mb-6 font-outfit">Grafik Aktivitas Pengunjung (7
-                            Hari Terakhir)</h2>
+                        <h2 class="text-xl font-bold text-slate-800 mb-6 font-outfit">Grafik Kunjungan Website PPDB (7 Hari Terakhir)</h2>
                         <div class="relative h-72 w-full">
                             <canvas id="visitorChart"></canvas>
                         </div>
@@ -249,28 +235,6 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div
-                            class="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col justify-center items-center">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-outfit">
-                                Kunjungan Hari Ini</p>
-                            <h3 id="detail-stat-day" class="text-4xl font-black text-sekolah-blue font-outfit">0</h3>
-                        </div>
-                        <div
-                            class="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col justify-center items-center">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-outfit">
-                                Kunjungan Bulan Ini</p>
-                            <h3 id="detail-stat-month" class="text-4xl font-black text-sekolah-orange font-outfit">0
-                            </h3>
-                        </div>
-                        <div
-                            class="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col justify-center items-center">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 font-outfit">
-                                Kunjungan Tahun Ini</p>
-                            <h3 id="detail-stat-year" class="text-4xl font-black text-green-500 font-outfit">0</h3>
-                        </div>
-                    </div>
-
                     <div class="border border-slate-100 rounded-xl overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[500px]">
                             <thead class="bg-slate-50 border-b border-slate-200">
@@ -290,7 +254,7 @@
                     </div>
 
                     <div class="mt-10 flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <h2 class="text-xl font-bold text-slate-800 font-outfit">Log Akses IP Pengunjung Website</h2>
+                        <h2 class="text-xl font-bold text-slate-800 font-outfit">Log Akses Perangkat Pengunjung PPDB</h2>
                     </div>
 
                     <div class="border border-slate-100 rounded-xl overflow-x-auto mb-10">
@@ -345,7 +309,7 @@
             <!-- PDF Upload Tab -->
             <section id="tab-pdf" class="tab-content">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                    <h2 class="text-xl font-bold text-slate-800 mb-8 font-outfit">Manajemen Dataset PDF</h2>
+                    <h2 class="text-xl font-bold text-slate-800 mb-8 font-outfit">Dokumen Informasi PPDB SMKN 1 Kota Sorong</h2>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
                         <!-- Form Upload -->
@@ -586,10 +550,10 @@
 
     <script>
         const titles = {
-            'dashboard': 'Overview & Grafik',
-            'stats': 'Log Pengunjung',
-            'pdf': 'Manajemen Dataset PDF',
-            'config': 'Pengaturan Informasi'
+            'dashboard': 'Dashboard AI PPDB SMKN 1',
+            'stats': 'Riwayat Kunjungan Website',
+            'pdf': 'Dokumen & Dataset PPDB',
+            'config': 'Jadwal & Syarat PPDB'
         };
 
         let myChart = null;
@@ -661,7 +625,8 @@
 
                 // Update Cards Main Dashboard
                 document.getElementById('stat-main-tokens').innerText = data.total_tokens.toLocaleString();
-                document.getElementById('stat-main-visits').innerText = data.today_visits.toLocaleString();
+                const statMainVisits = document.getElementById('stat-main-visits');
+                if (statMainVisits) statMainVisits.innerText = data.today_visits.toLocaleString();
                 document.getElementById('stat-file-count').innerText = data.docs_count;
 
                 // Update Detail Stats
