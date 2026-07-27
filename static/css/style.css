@@ -9,7 +9,8 @@
     --glass-shadow: 0 8px 32px 0 rgba(60, 89, 165, 0.12);
 }
 
-html, body {
+html,
+body {
     overflow-x: hidden;
     width: 100%;
 }
@@ -21,24 +22,52 @@ body {
     scroll-behavior: smooth;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Outfit', sans-serif;
 }
 
 /* Animations */
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(2deg); }
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(2deg);
+    }
 }
 
 @keyframes blobPulse {
-    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.6; }
-    50% { transform: scale(1.1) translate(20px, -20px); opacity: 0.3; }
+
+    0%,
+    100% {
+        transform: scale(1) translate(0, 0);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: scale(1.1) translate(20px, -20px);
+        opacity: 0.3;
+    }
 }
 
 .animate-reveal {
@@ -50,9 +79,17 @@ h1, h2, h3, h4, h5, h6 {
     animation: float 8s ease-in-out infinite;
 }
 
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
+.delay-100 {
+    animation-delay: 0.1s;
+}
+
+.delay-200 {
+    animation-delay: 0.2s;
+}
+
+.delay-300 {
+    animation-delay: 0.3s;
+}
 
 /* Premium Glassmorphism Card */
 .glass-card {
@@ -71,7 +108,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Navbar */
 .nav-glass {
     background: rgba(60, 89, 165, 0.98);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-link {
@@ -82,7 +119,8 @@ h1, h2, h3, h4, h5, h6 {
     transition: all 0.3s ease;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
     color: #ffffff;
 }
 
@@ -98,7 +136,8 @@ h1, h2, h3, h4, h5, h6 {
     transition: width 0.3s ease;
 }
 
-.nav-link:hover::after, .nav-link.active::after {
+.nav-link:hover::after,
+.nav-link.active::after {
     width: 100%;
 }
 
@@ -109,9 +148,32 @@ h1, h2, h3, h4, h5, h6 {
     filter: blur(40px);
     z-index: 0;
 }
-.blob-1 { background: rgba(60, 89, 165, 0.25); width: 450px; height: 450px; top: -100px; left: -100px; }
-.blob-2 { background: rgba(255, 105, 0, 0.15); width: 350px; height: 350px; bottom: 10%; right: -50px; animation-delay: 2s;}
-.blob-3 { background: rgba(60, 89, 165, 0.15); width: 300px; height: 300px; top: 40%; left: 30%; animation-delay: 4s;}
+
+.blob-1 {
+    background: rgba(60, 89, 165, 0.25);
+    width: 450px;
+    height: 450px;
+    top: -100px;
+    left: -100px;
+}
+
+.blob-2 {
+    background: rgba(255, 105, 0, 0.15);
+    width: 350px;
+    height: 350px;
+    bottom: 10%;
+    right: -50px;
+    animation-delay: 2s;
+}
+
+.blob-3 {
+    background: rgba(60, 89, 165, 0.15);
+    width: 300px;
+    height: 300px;
+    top: 40%;
+    left: 30%;
+    animation-delay: 4s;
+}
 
 /* Modern Button */
 .btn-primary {
@@ -119,6 +181,7 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 15px rgba(255, 105, 0, 0.4);
     transition: all 0.3s ease;
 }
+
 .btn-primary:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(255, 105, 0, 0.6);
@@ -130,6 +193,7 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--primary-blue);
     transition: all 0.3s ease;
 }
+
 .btn-secondary:hover {
     background: #ffffff;
     box-shadow: 0 8px 25px rgba(60, 89, 165, 0.15);
@@ -137,24 +201,136 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Chatbot Styles */
-.typing-indicator { display: flex; align-items: center; gap: 4px; height: 16px; }
-.typing-indicator span { width: 6px; height: 6px; background-color: #64748b; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
-.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 16px;
+}
+
+.typing-indicator span {
+    width: 6px;
+    height: 6px;
+    background-color: #64748b;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+    }
+
+    40% {
+        transform: scale(1);
+    }
+}
 
 /* Custom scrollbar */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
     background: rgba(60, 89, 165, 0.2);
     border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(60, 89, 165, 0.4); }
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(60, 89, 165, 0.4);
+}
 
 /* Text Gradients */
 .text-gradient {
     background: linear-gradient(135deg, var(--primary-blue), #1e2c54);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES (Tambahkan di bagian paling bawah file CSS)
+   ========================================================================== */
+
+/* 1. Pengaturan untuk Layar HP / Mobile (Maksimal 768px) */
+@media (max-width: 768px) {
+
+    /* Jinakkan blob background agar tidak membuat layar bocor ke kanan */
+    .blob-1 {
+        width: 250px;
+        height: 250px;
+        top: -50px;
+        left: -50px;
+    }
+
+    .blob-2 {
+        width: 200px;
+        height: 200px;
+        bottom: 5%;
+        right: -30px;
+    }
+
+    .blob-3 {
+        display: none;
+        /* Sembunyikan blob tengah di HP agar tidak menutupi teks */
+    }
+
+    /* Kurangi efek hover transform di HP karena tidak ada kursor (menghindari bug double-tap) */
+    .glass-card:hover,
+    .btn-primary:hover,
+    .btn-secondary:hover {
+        transform: none;
+        box-shadow: var(--glass-shadow);
+    }
+
+    /* Amankan padding dan ukuran teks untuk elemen glass-card di HP */
+    .glass-card {
+        padding: 1.25rem !important;
+        /* Memastikan ruang dalam kartu pas di HP */
+    }
+
+    /* Animasi fade up disederhanakan agar tidak berat di browser HP jadul */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* 2. Pengaturan Fleksibilitas Global (Antisipasi jika ada layout grid/flex bawaan) */
+img,
+video,
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Jika ada tabel di dalam chat atau dokumen, buat bisa di-scroll horizontal di HP */
+table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }

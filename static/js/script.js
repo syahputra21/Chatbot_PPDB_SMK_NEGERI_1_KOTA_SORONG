@@ -131,6 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openSidebarBtn) openSidebarBtn.addEventListener('click', toggleSidebar);
     if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', toggleSidebar);
 
+    // Menutup sidebar jika pengguna menekan area luar sidebar (Mobile)
+    document.addEventListener('click', (e) => {
+        const isMobile = window.innerWidth < 768;
+        if (isMobile && sidebar && !sidebar.classList.contains('-translate-x-full')) {
+            const clickedInsideSidebar = sidebar.contains(e.target);
+            const clickedOpenBtn = openSidebarBtn && openSidebarBtn.contains(e.target);
+            
+            if (!clickedInsideSidebar && !clickedOpenBtn) {
+                toggleSidebar();
+            }
+        }
+    });
     function renderHistory() {
         if (!historyList) return;
         historyList.innerHTML = '';

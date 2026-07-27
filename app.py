@@ -422,6 +422,18 @@ def admin_stats():
     except:
         pass
         
+    visitor_logs = []
+    try:
+        rows = conn.execute("SELECT ip, date, time FROM visitor_ips ORDER BY date DESC, time DESC LIMIT 100").fetchall()
+        for r in rows:
+            visitor_logs.append({
+                "ip": r[0] or "Unknown",
+                "date": r[1] or "-",
+                "time": r[2] or "-"
+            })
+    except:
+        pass
+        
     conn.close()
     return jsonify({
         "visitors": v, 
@@ -430,7 +442,8 @@ def admin_stats():
         "year_visits": year_visits,
         "total_tokens": t, 
         "docs_count": len(os.listdir(app.config['UPLOAD_FOLDER'])),
-        "api_ips": api_ips
+        "api_ips": api_ips,
+        "visitor_logs": visitor_logs
     })
 
 @app.route('/api/export_stats')
