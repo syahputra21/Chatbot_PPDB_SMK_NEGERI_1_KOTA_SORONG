@@ -184,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!session) return;
         
         currentSessionId = id;
+        localStorage.setItem('last_active_chat_session', id);
         renderHistory();
         
         chatArea.innerHTML = '';
@@ -231,12 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session) {
             session.messages.push({ role, text });
             localStorage.setItem('chat_sessions', JSON.stringify(sessions));
+            localStorage.setItem('last_active_chat_session', currentSessionId);
             renderHistory();
         }
     }
 
     function startNewChat() {
         currentSessionId = null;
+        localStorage.removeItem('last_active_chat_session');
         chatArea.innerHTML = '';
         renderHistory();
         
@@ -252,8 +255,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Initial Render
-    renderHistory();
+    // Initial Render & Restore Active Chat Session on Refresh
+    const lastActiveSession = localStorage.getItem('last_active_chat_session');
+    if (lastActiveSession && sessions.some(s => s.id === lastActiveSession)) {
+        loadSession(lastActiveSession);
+    } else {
+        renderHistory();
+    }
+
+    // --- WEBSITE-WIDE REFRESH PERSISTENCE (SCROLL & MENU STATE) ---
+    const pathKey = 'scrollPos_' + window.location.pathname;
+    const savedScroll = sessionStorage.getItem(pathKey);
+    if (savedScroll) {
+        window.scrollTo(0, parseInt(savedScroll, 10));
+    }
+    window.addEventListener('scroll', () => {
+        sessionStorage.setItem(pathKey, window.scrollY);
+    });
 
     // --- AUTO-ASK ---
     autoAskBoxes.forEach(box => {
