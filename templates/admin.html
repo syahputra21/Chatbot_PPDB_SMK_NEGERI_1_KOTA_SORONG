@@ -112,35 +112,35 @@
         <nav class="flex-1 py-6 overflow-y-auto">
             <div class="px-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider font-outfit">Utama</div>
             <button onclick="switchTab('dashboard')" id="btn-dashboard"
-                class="sidebar-item active w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
-                <i class="fa-solid fa-gauge-high w-5 text-center text-lg"></i>
-                <span class="font-medium">Dashboard PPDB</span>
+                class="sidebar-item active w-full flex items-center gap-3.5 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent text-left">
+                <i class="fa-solid fa-gauge-high w-5 text-center text-lg shrink-0"></i>
+                <span class="font-medium text-sm leading-tight">Dashboard PPDB</span>
             </button>
 
             <div class="px-6 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider font-outfit">Data Master
             </div>
             <button onclick="switchTab('stats')" id="btn-stats"
-                class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
-                <i class="fa-solid fa-users w-5 text-center text-lg"></i>
-                <span class="font-medium">Riwayat Pengunjung</span>
+                class="sidebar-item w-full flex items-center gap-3.5 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent text-left">
+                <i class="fa-solid fa-users w-5 text-center text-lg shrink-0"></i>
+                <span class="font-medium text-sm leading-tight">Riwayat Pengunjung</span>
             </button>
             <button onclick="switchTab('pdf')" id="btn-pdf"
-                class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
-                <i class="fa-solid fa-file-pdf w-5 text-center text-lg"></i>
-                <span class="font-medium">Dokumen & Dataset PPDB</span>
+                class="sidebar-item w-full flex items-center gap-3.5 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent text-left">
+                <i class="fa-solid fa-file-pdf w-5 text-center text-lg shrink-0"></i>
+                <span class="font-medium text-sm leading-tight">Dataset PPDB</span>
             </button>
             <button onclick="switchTab('config')" id="btn-config"
-                class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent">
-                <i class="fa-solid fa-calendar-alt w-5 text-center text-lg"></i>
-                <span class="font-medium">Pengaturan Informasi PPDB</span>
+                class="sidebar-item w-full flex items-center gap-3.5 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-all border-l-4 border-transparent text-left">
+                <i class="fa-solid fa-calendar-alt w-5 text-center text-lg shrink-0"></i>
+                <span class="font-medium text-sm leading-tight">Pengaturan Informasi PPDB</span>
             </button>
 
             <div class="px-6 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider font-outfit">Lainnya
             </div>
             <button id="btn-logout"
-                class="w-full flex items-center gap-3 px-6 py-3 text-red-400 hover:text-red-300 hover:bg-white/5 transition-all border-l-4 border-transparent">
-                <i class="fa-solid fa-arrow-right-from-bracket w-5 text-center text-lg"></i>
-                <span class="font-medium">Logout</span>
+                class="w-full flex items-center gap-3.5 px-6 py-3 text-red-400 hover:text-red-300 hover:bg-white/5 transition-all border-l-4 border-transparent text-left">
+                <i class="fa-solid fa-arrow-right-from-bracket w-5 text-center text-lg shrink-0"></i>
+                <span class="font-medium text-sm leading-tight">Logout</span>
             </button>
         </nav>
     </aside>
@@ -556,7 +556,7 @@
             'dashboard': 'Dashboard AI PPDB SMKN 1',
             'stats': 'Riwayat Kunjungan Website',
             'pdf': 'Dataset PPDB',
-            'config': 'pengaturan informasi PPDB'
+            'config': 'Pengaturan Informasi PPDB'
         };
 
         let myChart = null;
