@@ -624,10 +624,18 @@
             document.getElementById('tab-' + tabId).classList.add('active');
 
             const btn = document.getElementById('btn-' + tabId);
-            btn.classList.add('active', 'text-white', 'bg-white/5', 'border-sekolah-orange');
-            btn.classList.remove('text-gray-300', 'border-transparent');
+            if (btn) {
+                btn.classList.add('active', 'text-white', 'bg-white/5', 'border-sekolah-orange');
+                btn.classList.remove('text-gray-300', 'border-transparent');
+            }
 
-            document.getElementById('main-title').innerText = titles[tabId];
+            document.getElementById('main-title').innerText = titles[tabId] || 'Panel Admin';
+
+            // Simpan menu aktif ke localStorage dan URL hash agar saat halaman di-refresh tetap di menu ini (tidak kembali ke awal)
+            localStorage.setItem('activeAdminTab', tabId);
+            if (history.replaceState) {
+                history.replaceState(null, null, '#' + tabId);
+            }
 
             if (tabId === 'stats' || tabId === 'dashboard') loadStats();
             if (tabId === 'pdf') loadFiles();
@@ -966,6 +974,7 @@
         };
 
         document.getElementById('btn-logout').onclick = async () => {
+            localStorage.removeItem('activeAdminTab');
             await fetch('/api/logout', { method: 'POST' });
             window.location.href = '/';
         };
@@ -986,11 +995,13 @@
             }
         }
 
-        // Initialize active state
-        document.getElementById('btn-dashboard').classList.add('text-white', 'bg-white/5', 'border-sekolah-orange');
-        document.getElementById('btn-dashboard').classList.remove('text-gray-300', 'border-transparent');
+        // Pulihkan menu/tab yang aktif sebelum refresh halaman
+        const savedHash = window.location.hash ? window.location.hash.substring(1) : null;
+        const savedLocal = localStorage.getItem('activeAdminTab');
+        const validTabs = ['dashboard', 'stats', 'pdf', 'config'];
+        const activeTab = validTabs.includes(savedHash) ? savedHash : (validTabs.includes(savedLocal) ? savedLocal : 'dashboard');
 
-        loadStats();
+        switchTab(activeTab);
     </script>
 </body>
 
