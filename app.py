@@ -31,12 +31,32 @@ app = Flask(__name__)
 # Secret key diperlukan untuk Sistem Session (Fitur Login Admin)
 app.secret_key = 'skripsi-sorong-2026'
 
-# Menetapkan folder tempat menyimpan file dokumen PDF
-app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
+import shutil
 
+# ---------------------------------------------------------
+# KOMPATIBILITAS VERCEL (SERVERLESS / READ-ONLY FILESYSTEM)
+# ---------------------------------------------------------
+DB_PATH = os.path.join(basedir, 'stats.db')
 CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
+
+if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+    DB_PATH = '/tmp/stats.db'
+    CONFIG_FILE = '/tmp/ppdb_config.json'
+    app.config['UPLOAD_FOLDER'] = '/tmp/dataset'
+    try:
+        if not os.path.exists(DB_PATH) and os.path.exists(os.path.join(basedir, 'stats.db')):
+            shutil.copy2(os.path.join(basedir, 'stats.db'), DB_PATH)
+        if not os.path.exists(CONFIG_FILE) and os.path.exists(os.path.join(basedir, 'ppdb_config.json')):
+            shutil.copy2(os.path.join(basedir, 'ppdb_config.json'), CONFIG_FILE)
+        if not os.path.exists('/tmp/dataset') and os.path.exists(os.path.join(basedir, 'dataset')):
+            shutil.copytree(os.path.join(basedir, 'dataset'), '/tmp/dataset')
+    except Exception as e:
+        print(f"[VERCEL WARNING] Gagal menyalin ke /tmp: {e}")
+else:
+    app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 
 def get_ppdb_config():
     if os.path.exists(CONFIG_FILE):
@@ -129,22 +149,25 @@ def save_ppdb_config(data):
 # ---------------------------------------------------------
 def init_db():
     """Membuat tabel db jika belum ada. Untuk log pengunjung dan token."""
-    conn = sqlite3.connect('stats.db')
-    cursor = conn.cursor()
-    # Tabel visitors mencatat jumlah kunjungan harian
-    cursor.execute('''CREATE TABLE IF NOT EXISTS visitors (date TEXT PRIMARY KEY, count INTEGER)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS usage (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, tokens INTEGER, ts TIMESTAMP)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS visitor_ips (ip TEXT, date TEXT, time TEXT)''')
     try:
-        # Migrasi jika kolom time belum ada
-        cursor.execute("ALTER TABLE visitor_ips ADD COLUMN time TEXT")
-    except:
-        pass
-        
-    # Tabel visitor_ips memastikan 1 IP hanya dihitung 1 kali per hari
-    cursor.execute('CREATE TABLE IF NOT EXISTS visitor_ips (ip TEXT, date TEXT, PRIMARY KEY(ip, date))')
-    conn.commit()
-    conn.close()
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        # Tabel visitors mencatat jumlah kunjungan harian
+        cursor.execute('''CREATE TABLE IF NOT EXISTS visitors (date TEXT PRIMARY KEY, count INTEGER)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS usage (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, tokens INTEGER, ts TIMESTAMP)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS visitor_ips (ip TEXT, date TEXT, time TEXT)''')
+        try:
+            # Migrasi jika kolom time belum ada
+            cursor.execute("ALTER TABLE visitor_ips ADD COLUMN time TEXT")
+        except:
+            pass
+            
+        # Tabel visitor_ips memastikan 1 IP hanya dihitung 1 kali per hari
+        cursor.execute('CREATE TABLE IF NOT EXISTS visitor_ips (ip TEXT, date TEXT, PRIMARY KEY(ip, date))')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[VERCEL INIT_DB WARNING] {e}")
 
 def get_client_ip():
     if request.headers.getlist("X-Forwarded-For"):
@@ -158,26 +181,29 @@ def log_visit():
     session_key = f"visited_{today}"
     ip = get_client_ip()
     
-    conn = sqlite3.connect('stats.db')
-    cursor = conn.cursor()
-    
-    # Deteksi dan simpan IP perangkat yang mengakses web beserta waktunya
-    if ip:
-        # Jika belum tercatat hari ini, tambahkan dengan waktu pertama kali akses
-        cursor.execute("SELECT 1 FROM visitor_ips WHERE ip = ? AND date = ?", (ip, today))
-        if not cursor.fetchone():
-            cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
-    
-    # Cek apakah perangkat/browser ini sudah berkunjung hari ini via Cookie Sesi
-    if not session.get(session_key):
-        session[session_key] = True
-        session.permanent = True # Simpan cookie secara persisten
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
         
-        cursor.execute("INSERT OR IGNORE INTO visitors (date, count) VALUES (?, 0)", (today,))
-        cursor.execute("UPDATE visitors SET count = count + 1 WHERE date = ?", (today,))
+        # Deteksi dan simpan IP perangkat yang mengakses web beserta waktunya
+        if ip:
+            # Jika belum tercatat hari ini, tambahkan dengan waktu pertama kali akses
+            cursor.execute("SELECT 1 FROM visitor_ips WHERE ip = ? AND date = ?", (ip, today))
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
         
-    conn.commit()
-    conn.close()
+        # Cek apakah perangkat/browser ini sudah berkunjung hari ini via Cookie Sesi
+        if not session.get(session_key):
+            session[session_key] = True
+            session.permanent = True # Simpan cookie secara persisten
+            
+            cursor.execute("INSERT OR IGNORE INTO visitors (date, count) VALUES (?, 0)", (today,))
+            cursor.execute("UPDATE visitors SET count = count + 1 WHERE date = ?", (today,))
+            
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[VERCEL LOG_VISIT WARNING] {e}")
 
 # ---------------------------------------------------------
 # 3. KECERDASAN BUATAN (AI & RAG SYSTEM)
@@ -370,7 +396,7 @@ Data pedoman:
         try:
             # Gunakan data akurat dari Google. Jika kosong, baru gunakan metode perkiraan kata.
             tokens = exact_tokens if exact_tokens > 0 else (len(prompt.split()) + len(full_response.split()))
-            conn = sqlite3.connect('stats.db')
+            conn = sqlite3.connect(DB_PATH)
             conn.execute("INSERT INTO usage (ip, tokens, ts) VALUES (?, ?, ?)", (user_ip, tokens, datetime.datetime.now()))
             conn.commit()
             conn.close()
@@ -391,7 +417,10 @@ def login():
 @app.route('/api/admin_stats')
 def admin_stats():
     """Sajikan Data Statistik Pengunjung, Total Token Pemakaian dan Total PDF"""
-    conn = sqlite3.connect('stats.db')
+    try:
+        conn = sqlite3.connect(DB_PATH)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
     today_str = datetime.date.today().isoformat()
     month_str = today_str[:7]
@@ -457,7 +486,10 @@ def export_stats():
     import tempfile
     from flask import send_file
     
-    conn = sqlite3.connect('stats.db')
+    try:
+        conn = sqlite3.connect(DB_PATH)
+    except Exception as e:
+        return f"Database Error: {e}", 500
     
     # Data Keseluruhan
     today_str = datetime.date.today().isoformat()
@@ -548,7 +580,7 @@ def clear_stats():
         session_key = f"visited_{today}"
         session.pop(session_key, None)
         
-        conn = sqlite3.connect('stats.db')
+        conn = sqlite3.connect(DB_PATH)
         conn.execute("DELETE FROM visitors")
         conn.execute("DELETE FROM usage")
         conn.execute("DELETE FROM visitor_ips")
