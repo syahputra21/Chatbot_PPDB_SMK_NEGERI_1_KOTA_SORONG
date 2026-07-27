@@ -479,7 +479,7 @@ def admin_stats():
         "month_visits": month_visits,
         "year_visits": year_visits,
         "total_tokens": t, 
-        "docs_count": len(os.listdir(app.config['UPLOAD_FOLDER'])),
+        "docs_count": len([f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.lower().endswith('.pdf')]),
         "api_ips": api_ips,
         "visitor_logs": visitor_logs
     })
@@ -600,8 +600,9 @@ def clear_stats():
 
 @app.route('/api/list_files')
 def list_files(): 
-    """Mendeteksi seluruh nama file di folder data bagi halaman Admin."""
-    return jsonify(os.listdir(app.config['UPLOAD_FOLDER']))
+    """Mendeteksi seluruh nama file PDF di folder data bagi halaman Admin."""
+    files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.lower().endswith('.pdf')]
+    return jsonify(files)
 
 @app.route('/api/upload_pdf', methods=['POST'])
 def upload():
