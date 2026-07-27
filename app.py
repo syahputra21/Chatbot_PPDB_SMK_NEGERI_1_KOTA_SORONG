@@ -169,15 +169,21 @@ def init_db():
     except Exception as e:
         print(f"[VERCEL INIT_DB WARNING] {e}")
 
+def get_sorong_time():
+    """Mendapatkan waktu real-time Waktu Indonesia Timur (WIT / UTC+9 / Kota Sorong)."""
+    tz_sorong = datetime.timezone(datetime.timedelta(hours=9))
+    return datetime.datetime.now(tz_sorong)
+
 def get_client_ip():
     if request.headers.getlist("X-Forwarded-For"):
         return request.headers.getlist("X-Forwarded-For")[0].split(',')[0].strip()
     return request.remote_addr
 
 def log_visit():
-    """Menambah '+1' pada jumlah kunjungan di hari ini (dibatasi 1 Perangkat = 1 Hitungan per hari)."""
-    today = datetime.date.today().isoformat()
-    now_time = datetime.datetime.now().strftime("%H:%M:%S")
+    """Menambah '+1' pada jumlah kunjungan di hari ini dan mencatat jam akses real-time WIT."""
+    sorong_now = get_sorong_time()
+    today = sorong_now.date().isoformat()
+    now_time = sorong_now.strftime("%H:%M:%S WIT")
     session_key = f"visited_{today}"
     ip = get_client_ip()
     
@@ -185,12 +191,14 @@ def log_visit():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # Deteksi dan simpan IP perangkat yang mengakses web beserta waktunya
+        # Deteksi dan simpan IP perangkat yang mengakses web beserta waktu akses real-time WIT (Kota Sorong)
         if ip:
-            # Jika belum tercatat hari ini, tambahkan dengan waktu pertama kali akses
+            # Jika belum tercatat hari ini, tambahkan. Jika sudah ada, update dengan jam akses terakhir secara real-time.
             cursor.execute("SELECT 1 FROM visitor_ips WHERE ip = ? AND date = ?", (ip, today))
             if not cursor.fetchone():
                 cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
+            else:
+                cursor.execute("UPDATE visitor_ips SET time = ? WHERE ip = ? AND date = ?", (now_time, ip, today))
         
         # Cek apakah perangkat/browser ini sudah berkunjung hari ini via Cookie Sesi
         if not session.get(session_key):
@@ -397,7 +405,7 @@ Data pedoman:
             # Gunakan data akurat dari Google. Jika kosong, baru gunakan metode perkiraan kata.
             tokens = exact_tokens if exact_tokens > 0 else (len(prompt.split()) + len(full_response.split()))
             conn = sqlite3.connect(DB_PATH)
-            conn.execute("INSERT INTO usage (ip, tokens, ts) VALUES (?, ?, ?)", (user_ip, tokens, datetime.datetime.now()))
+            conn.execute("INSERT INTO usage (ip, tokens, ts) VALUES (?, ?, ?)", (user_ip, tokens, get_sorong_time().strftime("%Y-%m-%d %H:%M:%S WIT")))
             conn.commit()
             conn.close()
         except Exception as e:
@@ -422,7 +430,7 @@ def admin_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-    today_str = datetime.date.today().isoformat()
+    today_str = get_sorong_time().date().isoformat()
     month_str = today_str[:7]
     year_str = today_str[:4]
     
@@ -492,7 +500,7 @@ def export_stats():
         return f"Database Error: {e}", 500
     
     # Data Keseluruhan
-    today_str = datetime.date.today().isoformat()
+    today_str = get_sorong_time().date().isoformat()
     month_str = today_str[:7]
     year_str = today_str[:4]
     
@@ -576,7 +584,7 @@ def clear_stats():
         return jsonify({"success": False, "error": "Unauthorized"}), 401
     try:
         # Hapus tanda 'sudah berkunjung' dari browser Admin agar admin bisa mengetes ulang
-        today = datetime.date.today().isoformat()
+        today = get_sorong_time().date().isoformat()
         session_key = f"visited_{today}"
         session.pop(session_key, None)
         
