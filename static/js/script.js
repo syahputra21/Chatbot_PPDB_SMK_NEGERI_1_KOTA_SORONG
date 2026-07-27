@@ -1,3 +1,4 @@
+/* Update Keseluruhan Sistem PPDB SMKN 1 Sorong (27 Juli 2026) */
 window.switchPage = function(pageId) {
     document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');

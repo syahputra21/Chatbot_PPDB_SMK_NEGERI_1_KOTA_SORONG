@@ -1,3 +1,4 @@
+# Update Keseluruhan Sistem PPDB SMKN 1 Sorong (27 Juli 2026)
 """
 # =========================================================
 # FILE: app.py

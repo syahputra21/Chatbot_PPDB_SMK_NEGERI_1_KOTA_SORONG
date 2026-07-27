@@ -17,3 +17,4 @@ pandas
 bert-score
 torch
 numpy
+# Updated: 27 Juli 2026 - Semua File dan Folder PPDB SMKN 1 Sorong
