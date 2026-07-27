@@ -31,31 +31,11 @@ app = Flask(__name__)
 # Secret key diperlukan untuk Sistem Session (Fitur Login Admin)
 app.secret_key = 'skripsi-sorong-2026'
 
-import shutil
-
-# ---------------------------------------------------------
-# KOMPATIBILITAS VERCEL (SERVERLESS / READ-ONLY FILESYSTEM)
-# ---------------------------------------------------------
 DB_PATH = os.path.join(basedir, 'stats.db')
 CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
-
-if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
-    DB_PATH = '/tmp/stats.db'
-    CONFIG_FILE = '/tmp/ppdb_config.json'
-    app.config['UPLOAD_FOLDER'] = '/tmp/dataset'
-    try:
-        if not os.path.exists(DB_PATH) and os.path.exists(os.path.join(basedir, 'stats.db')):
-            shutil.copy2(os.path.join(basedir, 'stats.db'), DB_PATH)
-        if not os.path.exists(CONFIG_FILE) and os.path.exists(os.path.join(basedir, 'ppdb_config.json')):
-            shutil.copy2(os.path.join(basedir, 'ppdb_config.json'), CONFIG_FILE)
-        if not os.path.exists('/tmp/dataset') and os.path.exists(os.path.join(basedir, 'dataset')):
-            shutil.copytree(os.path.join(basedir, 'dataset'), '/tmp/dataset')
-    except Exception as e:
-        print(f"[VERCEL WARNING] Gagal menyalin ke /tmp: {e}")
-else:
-    app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
 def get_ppdb_config():
@@ -167,7 +147,7 @@ def init_db():
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"[VERCEL INIT_DB WARNING] {e}")
+        print(f"[INIT_DB WARNING] {e}")
 
 def get_sorong_time():
     """Mendapatkan waktu real-time Waktu Indonesia Timur (WIT / UTC+9 / Kota Sorong)."""
@@ -211,7 +191,7 @@ def log_visit():
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"[VERCEL LOG_VISIT WARNING] {e}")
+        print(f"[LOG_VISIT WARNING] {e}")
 
 # ---------------------------------------------------------
 # 3. KECERDASAN BUATAN (AI & RAG SYSTEM)
