@@ -1,0 +1,19 @@
+# Abaikan folder virtual environment lokal
+venv/
+venv
+__pycache__/
+*.pyc
+
+# Abaikan konfigurasi Git dan IDE lokal
+.git/
+.gitignore
+.env
+.gemini/
+scratch/
+
+# Abaikan skrip evaluasi & testing lokal skripsi (tidak diperlukan untuk server website live)
+evaluate.py
+test_pdf_reader.py
+hasil_evaluasi_bertscore.csv
+perintah_terminal.txt
+models.txt

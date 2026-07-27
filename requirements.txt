@@ -12,9 +12,7 @@ langchain-google-genai
 langchain-text-splitters
 faiss-cpu
 
-# --- Evaluation & Metrics (evaluate.py) ---
-pandas
-bert-score
-torch
+# --- Data & Utilities ---
 numpy
-# Updated: 27 Juli 2026 - Semua File dan Folder PPDB SMKN 1 Sorong
+pandas
+fpdf

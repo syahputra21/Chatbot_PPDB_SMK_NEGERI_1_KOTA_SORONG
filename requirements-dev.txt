@@ -1,0 +1,8 @@
+# --- Library khusus untuk pengujian dan evaluasi lokal skripsi (evaluate.py) ---
+# Gunakan perintah berikut di komputer lokal jika ingin menjalankan evaluasi BERTScore:
+# pip install -r requirements-dev.txt
+
+bert-score
+torch
+pandas
+numpy
