@@ -175,21 +175,8 @@
             <section id="tab-dashboard" class="tab-content active">
                 <div class="space-y-6">
                     <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Card 1 -->
-                        <div
-                            class="p-6 rounded-2xl border border-slate-200 flex items-center justify-between bg-white shadow-sm hover:shadow-md transition-shadow">
-                            <div>
-                                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 font-outfit">
-                                    Total Pengunjung Hari Ini</p>
-                                <h3 id="stat-main-tokens" class="text-3xl font-black text-slate-800 font-outfit">0 Akses</h3>
-                            </div>
-                            <div
-                                class="w-14 h-14 rounded-full bg-blue-50 text-sekolah-blue flex items-center justify-center text-2xl">
-                                <i class="fa-solid fa-users"></i>
-                            </div>
-                        </div>
-                        <!-- Card 2 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Card Dokumen Dataset -->
                         <div
                             class="p-6 rounded-2xl border border-slate-200 flex items-center justify-between bg-white shadow-sm hover:shadow-md transition-shadow">
                             <div>
@@ -602,7 +589,8 @@
                 const data = await res.json();
 
                 // Update Cards Main Dashboard
-                document.getElementById('stat-main-tokens').innerText = (data.today_visits || 0) + " Akses";
+                const statMainTokens = document.getElementById('stat-main-tokens');
+                if (statMainTokens) statMainTokens.innerText = (data.today_visits || 0) + " Akses";
                 const statMainVisits = document.getElementById('stat-main-visits');
                 if (statMainVisits) statMainVisits.innerText = data.today_visits.toLocaleString();
                 document.getElementById('stat-file-count').innerText = data.docs_count;
