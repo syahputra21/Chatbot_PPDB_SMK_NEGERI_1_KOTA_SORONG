@@ -39,12 +39,14 @@ app.secret_key = 'skripsi-sorong-2026'
 DB_PATH = os.path.join(basedir, 'stats.db')
 CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
 LOGS_FILE = os.path.join(basedir, 'visitor_logs.json')
+DATASET_LIST_FILE = os.path.join(basedir, 'dataset_list.json')
 
 if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
     DB_PATH = '/tmp/stats.db'
     CONFIG_FILE = '/tmp/ppdb_config.json'
     FAISS_INDEX_PATH = '/tmp/faiss_index'
     LOGS_FILE = '/tmp/visitor_logs.json'
+    DATASET_LIST_FILE = '/tmp/dataset_list.json'
     app.config['UPLOAD_FOLDER'] = '/tmp/dataset'
     try:
         if not os.path.exists(DB_PATH) and os.path.exists(os.path.join(basedir, 'stats.db')):
@@ -57,6 +59,8 @@ if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
             shutil.copytree(os.path.join(basedir, 'faiss_index'), '/tmp/faiss_index')
         if not os.path.exists('/tmp/visitor_logs.json') and os.path.exists(os.path.join(basedir, 'visitor_logs.json')):
             shutil.copy2(os.path.join(basedir, 'visitor_logs.json'), '/tmp/visitor_logs.json')
+        if not os.path.exists('/tmp/dataset_list.json') and os.path.exists(os.path.join(basedir, 'dataset_list.json')):
+            shutil.copy2(os.path.join(basedir, 'dataset_list.json'), '/tmp/dataset_list.json')
     except Exception as e:
         print(f"[VERCEL WARNING] Gagal menyalin ke /tmp: {e}")
 else:
@@ -185,6 +189,88 @@ def save_persistent_visitor_log(ip, date, time_str):
             threading.Thread(target=sync_visitor_logs_to_github, daemon=True).start()
     except Exception as e:
         print(f"[PERSISTENT LOG WARNING] {e}")
+
+
+def sync_dataset_list_to_github():
+    """Sinkronisasi dataset_list.json ke GitHub dengan pesan [skip ci] agar tidak memicu build Vercel ulang"""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token or not os.path.exists(DATASET_LIST_FILE):
+        return
+    repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+    url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Chatbot-PPDB-SMKN1-Sorong"
+    }
+    try:
+        sha = None
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as res:
+                data = json.loads(res.read().decode())
+                sha = data.get("sha")
+        except:
+            pass
+        with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
+            content_b64 = base64.b64encode(f.read().encode("utf-8")).decode("utf-8")
+        payload = {
+            "message": "[skip ci] chore(dataset): sinkronisasi daftar file dataset agar persisten",
+            "content": content_b64,
+            "branch": "main"
+        }
+        if sha:
+            payload["sha"] = sha
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="PUT")
+        with urllib.request.urlopen(req) as res:
+            print("[GITHUB SYNC] Daftar dataset berhasil disinkronkan ke GitHub.")
+    except Exception as e:
+        print(f"[GITHUB SYNC WARNING] Gagal sinkronisasi daftar dataset: {e}")
+
+
+def save_persistent_dataset_list(filename, action="add"):
+    """Menyimpan nama file PDF dataset secara persisten ke JSON dan sinkronisasi ke GitHub"""
+    try:
+        files = []
+        if os.path.exists(DATASET_LIST_FILE):
+            with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
+                try:
+                    files = json.load(f)
+                except:
+                    files = []
+        if action == "add" and filename not in files:
+            files.append(filename)
+        elif action == "remove" and filename in files:
+            files.remove(filename)
+        with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
+            json.dump(files, f, indent=4)
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+            threading.Thread(target=sync_dataset_list_to_github, daemon=True).start()
+    except Exception as e:
+        print(f"[PERSISTENT DATASET WARNING] {e}")
+
+
+def get_persistent_dataset_list():
+    """Mengambil daftar dataset gabungan lokal, JSON persisten, dan dari folder"""
+    files = set()
+    try:
+        if os.path.exists(app.config['UPLOAD_FOLDER']):
+            for f in os.listdir(app.config['UPLOAD_FOLDER']):
+                if f.lower().endswith('.pdf'):
+                    files.add(f)
+    except:
+        pass
+    try:
+        if os.path.exists(DATASET_LIST_FILE):
+            with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+                for sf in saved:
+                    if sf.lower().endswith('.pdf'):
+                        files.add(sf)
+    except:
+        pass
+    return sorted(list(files))
+
 
 
 def get_ppdb_config():
@@ -649,7 +735,7 @@ def admin_stats():
         "month_visits": month_visits,
         "year_visits": year_visits,
         "total_tokens": t, 
-        "docs_count": len([f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.lower().endswith('.pdf')]),
+        "docs_count": len(get_persistent_dataset_list()),
         "api_ips": api_ips,
         "visitor_logs": visitor_logs
     })
@@ -771,7 +857,7 @@ def clear_stats():
 @app.route('/api/list_files')
 def list_files(): 
     """Mendeteksi seluruh nama file PDF di folder data bagi halaman Admin."""
-    files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.lower().endswith('.pdf')]
+    files = get_persistent_dataset_list()
     return jsonify(files)
 
 @app.route('/api/upload_pdf', methods=['POST'])
@@ -784,6 +870,7 @@ def upload():
         f.save(filepath)
         try:
             initialize_rag(force_rebuild=True) # WAJIB dipanggil agar AI pintar mengenai PDF yang baru saja masuk
+            save_persistent_dataset_list(filename, "add")
             threading.Thread(target=sync_pdf_to_github, args=(filename, filepath, "upload"), daemon=True).start()
             return jsonify({"success": True})
         except Exception as e:
@@ -806,6 +893,7 @@ def delete():
     fn = request.json.get('filename')
     try:
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], fn))
+        save_persistent_dataset_list(fn, "remove")
         initialize_rag(force_rebuild=True)
         threading.Thread(target=sync_pdf_to_github, args=(fn, None, "delete"), daemon=True).start()
         return jsonify({"success": True})
