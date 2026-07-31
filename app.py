@@ -480,6 +480,29 @@ def login():
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
+@app.route('/api/log_visitor_ip', methods=['POST', 'GET'])
+def log_visitor_ip():
+    """Menerima dan mencatat alamat IP pengunjung dari script client-side index.html"""
+    try:
+        data = request.get_json(silent=True) or {}
+        ip = data.get('ip') or get_client_ip()
+        sorong_now = get_sorong_time()
+        today = sorong_now.date().isoformat()
+        now_time = sorong_now.strftime("%H:%M:%S WIT")
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM visitor_ips WHERE ip = ? AND date = ?", (ip, today))
+        if cursor.fetchone():
+            cursor.execute("UPDATE visitor_ips SET time = ? WHERE ip = ? AND date = ?", (now_time, ip, today))
+        else:
+            cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "ip": ip, "time": now_time})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/api/admin_stats')
 def admin_stats():
     """Sajikan Data Statistik Pengunjung, Total Token Pemakaian dan Total PDF"""

@@ -329,5 +329,30 @@
     </footer>
     </main>
 
+    <!-- KODE DETEKSI & PENCATATAN ALAMAT IP PENGUNJUNG (Sesuai Arahan Dosen) -->
+    <script>
+        // Fungsi untuk membaca dan mencatat alamat IP perangkat pengunjung secara Client-Side
+        async function deteksiAlamatIP() {
+            try {
+                // 1. Membaca alamat IP publik perangkat pengunjung
+                const respon = await fetch('https://api.ipify.org?format=json');
+                const data = await respon.json();
+                const alamatIP = data.ip;
+                console.log("Alamat IP Pengunjung Web PPDB:", alamatIP);
+                
+                // 2. Kirim IP ke server backend untuk dicatat ke database log admin
+                await fetch('/api/log_visitor_ip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: alamatIP })
+                });
+            } catch (error) {
+                console.log("Menggunakan deteksi alamat IP otomatis dari server.");
+            }
+        }
+
+        // Jalankan otomatis saat halaman utama web PPDB dimuat
+        document.addEventListener("DOMContentLoaded", deteksiAlamatIP);
+    </script>
 </body>
 </html>
