@@ -749,9 +749,8 @@ def log_visitor_ip():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/admin_stats')
-def admin_stats():
-    """Sajikan Data Statistik Pengunjung, Total Token Pemakaian dan Total PDF"""
+def get_synced_admin_data():
+    """Mengambil Data Statistik Pengunjung tersinkronisasi (untuk API Admin dan PDF)"""
     try:
         conn = sqlite3.connect(DB_PATH)
     except Exception as e:
