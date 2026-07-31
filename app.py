@@ -245,13 +245,13 @@ def save_persistent_dataset_list(filename, action="add"):
         with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
             json.dump(files, f, indent=4)
         if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
-            threading.Thread(target=sync_dataset_list_to_github, daemon=True).start()
+            sync_dataset_list_to_github()
     except Exception as e:
         print(f"[PERSISTENT DATASET WARNING] {e}")
 
 
 def get_persistent_dataset_list():
-    """Mengambil daftar dataset gabungan lokal, JSON persisten, dan dari folder"""
+    """Mengambil daftar dataset gabungan lokal, JSON persisten, dan dari GitHub API"""
     files = set()
     try:
         if os.path.exists(app.config['UPLOAD_FOLDER']):
@@ -269,6 +269,25 @@ def get_persistent_dataset_list():
                         files.add(sf)
     except:
         pass
+    try:
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+            token = os.getenv("GITHUB_TOKEN")
+            repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+            url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
+            headers = {"User-Agent": "Chatbot-PPDB-SMKN1-Sorong"}
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=3) as res:
+                data = json.loads(res.read().decode())
+                if data.get("content"):
+                    content_str = base64.b64decode(data["content"]).decode("utf-8")
+                    github_list = json.loads(content_str)
+                    for gf in github_list:
+                        if gf.lower().endswith('.pdf'):
+                            files.add(gf)
+    except Exception as e:
+        print(f"[GITHUB LIST WARNING] {e}")
     return sorted(list(files))
 
 
