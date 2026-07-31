@@ -42,6 +42,7 @@ CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
 if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
     DB_PATH = '/tmp/stats.db'
     CONFIG_FILE = '/tmp/ppdb_config.json'
+    FAISS_INDEX_PATH = '/tmp/faiss_index'
     app.config['UPLOAD_FOLDER'] = '/tmp/dataset'
     try:
         if not os.path.exists(DB_PATH) and os.path.exists(os.path.join(basedir, 'stats.db')):
@@ -50,9 +51,12 @@ if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
             shutil.copy2(os.path.join(basedir, 'ppdb_config.json'), CONFIG_FILE)
         if not os.path.exists('/tmp/dataset') and os.path.exists(os.path.join(basedir, 'dataset')):
             shutil.copytree(os.path.join(basedir, 'dataset'), '/tmp/dataset')
+        if not os.path.exists('/tmp/faiss_index') and os.path.exists(os.path.join(basedir, 'faiss_index')):
+            shutil.copytree(os.path.join(basedir, 'faiss_index'), '/tmp/faiss_index')
     except Exception as e:
         print(f"[VERCEL WARNING] Gagal menyalin ke /tmp: {e}")
 else:
+    FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
     app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'dataset')
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -281,7 +285,9 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2", google_api_key=os.getenv("GEMINI_API_KEY"))
 vector_store = None
 
-FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
+# FAISS_INDEX_PATH diatur secara dinamis (menggunakan /tmp di Vercel agar mendukung Read-Write)
+if not (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")):
+    FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
 
 def initialize_rag(force_rebuild=False):
     """
