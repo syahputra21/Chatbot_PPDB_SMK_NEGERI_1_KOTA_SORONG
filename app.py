@@ -38,11 +38,13 @@ app.secret_key = 'skripsi-sorong-2026'
 
 DB_PATH = os.path.join(basedir, 'stats.db')
 CONFIG_FILE = os.path.join(basedir, 'ppdb_config.json')
+LOGS_FILE = os.path.join(basedir, 'visitor_logs.json')
 
 if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
     DB_PATH = '/tmp/stats.db'
     CONFIG_FILE = '/tmp/ppdb_config.json'
     FAISS_INDEX_PATH = '/tmp/faiss_index'
+    LOGS_FILE = '/tmp/visitor_logs.json'
     app.config['UPLOAD_FOLDER'] = '/tmp/dataset'
     try:
         if not os.path.exists(DB_PATH) and os.path.exists(os.path.join(basedir, 'stats.db')):
@@ -53,6 +55,8 @@ if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
             shutil.copytree(os.path.join(basedir, 'dataset'), '/tmp/dataset')
         if not os.path.exists('/tmp/faiss_index') and os.path.exists(os.path.join(basedir, 'faiss_index')):
             shutil.copytree(os.path.join(basedir, 'faiss_index'), '/tmp/faiss_index')
+        if not os.path.exists('/tmp/visitor_logs.json') and os.path.exists(os.path.join(basedir, 'visitor_logs.json')):
+            shutil.copy2(os.path.join(basedir, 'visitor_logs.json'), '/tmp/visitor_logs.json')
     except Exception as e:
         print(f"[VERCEL WARNING] Gagal menyalin ke /tmp: {e}")
 else:
@@ -118,6 +122,69 @@ def sync_pdf_to_github(filename, filepath=None, action="upload"):
                 
     except Exception as e:
         print(f"[GITHUB SYNC WARNING] Gagal sinkronisasi ke GitHub: {e}")
+
+
+def sync_visitor_logs_to_github():
+    """Sinkronisasi visitor_logs.json ke GitHub dengan pesan [skip ci] agar tidak memicu build Vercel ulang"""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token or not os.path.exists(LOGS_FILE):
+        return
+    repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+    url = f"https://api.github.com/repos/{repo}/contents/visitor_logs.json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Chatbot-PPDB-SMKN1-Sorong"
+    }
+    try:
+        sha = None
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as res:
+                data = json.loads(res.read().decode())
+                sha = data.get("sha")
+        except:
+            pass
+        with open(LOGS_FILE, "r", encoding="utf-8") as f:
+            content_b64 = base64.b64encode(f.read().encode("utf-8")).decode("utf-8")
+        payload = {
+            "message": "[skip ci] chore(logs): sinkronisasi log alamat IP pengunjung agar persisten",
+            "content": content_b64,
+            "branch": "main"
+        }
+        if sha:
+            payload["sha"] = sha
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="PUT")
+        with urllib.request.urlopen(req) as res:
+            print("[GITHUB SYNC] Log IP berhasil disinkronkan ke GitHub.")
+    except Exception as e:
+        print(f"[GITHUB SYNC WARNING] Gagal sinkronisasi log IP: {e}")
+
+
+def save_persistent_visitor_log(ip, date, time_str):
+    """Menyimpan log IP secara persisten ke file JSON lokal/tmp dan sinkronisasi ke GitHub agar tidak hilang di Vercel"""
+    try:
+        logs = []
+        if os.path.exists(LOGS_FILE):
+            with open(LOGS_FILE, "r", encoding="utf-8") as f:
+                try:
+                    logs = json.load(f)
+                except:
+                    logs = []
+        updated = False
+        for item in logs:
+            if item.get("ip") == ip and item.get("date") == date:
+                item["time"] = time_str
+                updated = True
+                break
+        if not updated:
+            logs.insert(0, {"ip": ip, "date": date, "time": time_str})
+        with open(LOGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(logs[:100], f, indent=4)
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+            threading.Thread(target=sync_visitor_logs_to_github, daemon=True).start()
+    except Exception as e:
+        print(f"[PERSISTENT LOG WARNING] {e}")
 
 
 def get_ppdb_config():
@@ -261,6 +328,7 @@ def log_visit():
                 cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
             else:
                 cursor.execute("UPDATE visitor_ips SET time = ? WHERE ip = ? AND date = ?", (now_time, ip, today))
+            save_persistent_visitor_log(ip, today, now_time)
         
         # Cek apakah perangkat/browser ini sudah berkunjung hari ini via Cookie Sesi
         if not session.get(session_key):
@@ -503,6 +571,7 @@ def log_visitor_ip():
             cursor.execute("UPDATE visitor_ips SET time = ? WHERE ip = ? AND date = ?", (now_time, ip, today))
         else:
             cursor.execute("INSERT INTO visitor_ips (ip, date, time) VALUES (?, ?, ?)", (ip, today, now_time))
+        save_persistent_visitor_log(ip, today, now_time)
         conn.commit()
         conn.close()
         return jsonify({"success": True, "ip": ip, "time": now_time})
@@ -558,6 +627,20 @@ def admin_stats():
             })
     except:
         pass
+        
+    # Gabungkan dengan log persisten dari file JSON agar tidak hilang di Vercel saat di-refresh
+    try:
+        if os.path.exists(LOGS_FILE):
+            with open(LOGS_FILE, "r", encoding="utf-8") as f:
+                saved_logs = json.load(f)
+                existing_ips = {f"{x['ip']}_{x['date']}": True for x in visitor_logs}
+                for slog in saved_logs:
+                    key = f"{slog.get('ip')}_{slog.get('date')}"
+                    if not existing_ips.get(key):
+                        visitor_logs.append(slog)
+                        existing_ips[key] = True
+    except Exception as e:
+        print(f"[MERGE PERSISTENT LOGS WARNING] {e}")
         
     conn.close()
     return jsonify({
