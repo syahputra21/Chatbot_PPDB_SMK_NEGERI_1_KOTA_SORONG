@@ -912,17 +912,6 @@ def admin_stats():
     v_final = [[dt, cnt] for dt, cnt in sorted(date_counts.items(), key=lambda x: x[0], reverse=True)]
     visitor_logs_final = sorted(visitor_logs, key=lambda x: (x.get("date", ""), x.get("time", "")), reverse=True)
 
-    # 4. Pastikan semua alamat IP pengunjung yang ada di Log Akses Perangkat juga muncul permanen di Log Penggunaan API
-    for vlog in visitor_logs_final:
-        ip_v = vlog.get("ip")
-        if ip_v and ip_v not in api_ips_dict:
-            if ip_v == "180.249.153.107":
-                api_ips_dict[ip_v] = {"ip": ip_v, "requests": 12, "tokens": 45210}
-            elif ip_v == "182.2.202.59":
-                api_ips_dict[ip_v] = {"ip": ip_v, "requests": 6, "tokens": 18420}
-            else:
-                api_ips_dict[ip_v] = {"ip": ip_v, "requests": 3, "tokens": 8450}
-
     # Pastikan 127.0.0.1 memiliki minimal jumlah token seperti di riwayat
     if "127.0.0.1" in api_ips_dict:
         api_ips_dict["127.0.0.1"]["requests"] = max(api_ips_dict["127.0.0.1"]["requests"], 34)
@@ -931,6 +920,7 @@ def admin_stats():
         api_ips_dict["127.0.0.1"] = {"ip": "127.0.0.1", "requests": 34, "tokens": 154565}
 
     api_ips = sorted(list(api_ips_dict.values()), key=lambda x: x["tokens"], reverse=True)
+    t = sum(x["tokens"] for x in api_ips)
 
     conn.close()
     return jsonify({
