@@ -746,9 +746,15 @@ def chat():
     # Ambil referensi dokumen yang topiknya mirip/sama dengan chat siswa
     if vector_store:
         try:
-            # K-diperbesar ke 15 agar AI membaca cakupan referensi yang jauh lebih luas dari seluruh dataset
-            docs = vector_store.similarity_search(msg, k=15)
-            context = "\n".join([d.page_content for d in docs])
+            docs = vector_store.similarity_search(msg, k=12)
+            # Prioritaskan/urutkan chunk yang mengandung kata kunci pertanyaan siswa di urutan paling atas (Keyword Boosting)
+            query_words = [w.lower() for w in msg.split() if len(w) > 2]
+            def score_doc(d):
+                text_lower = d.page_content.lower()
+                return sum(1 for w in query_words if w in text_lower)
+            
+            docs_sorted = sorted(docs, key=score_doc, reverse=True)
+            context = "\n\n".join([f"--- [Referensi {i+1}] ---\n{d.page_content}" for i, d in enumerate(docs_sorted)])
         except Exception: 
             pass
     
@@ -762,19 +768,20 @@ def chat():
         history_text += "\n"
         
     prompt = f"""Anda adalah asisten virtual PPDB SMKN 1 Sorong. Jawablah pertanyaan siswa dengan ramah, jelas, dan informatif.
-Data pedoman:
+Data pedoman (diurutkan berdasarkan relevansi terbesar):
 {context}
 
 {history_text}Pertanyaan Siswa saat ini: {msg}
 
-(Penting: 
-1. Berikan jawaban SECARA LANGSUNG, SINGKAT, TO THE POINT, dan AKURAT sesuai dengan apa yang ditanyakan siswa tanpa bertele-tele atau menambahkan informasi lain yang tidak ditanyakan.
-2. Jika di dalam Data pedoman terdapat informasi spesifik yang cocok dengan pertanyaan (misalnya nama guru, syarat, atau jadwal tertentu), langsung sebutkan informasi tersebut dengan jelas.
-3. JANGAN MENGULANG poin, paragraf, atau kalimat yang sama berkali-kali. Pastikan setiap poin berbeda dan alur jawaban logis.
-4. JANGAN menggunakan backtick (`) saat menulis alamat URL/Website. Tulis dengan format Markdown Link (contoh: [Website Pendaftaran](https://contoh.id)).
-5. Jika jawaban tidak ditemukan dalam Data pedoman, sampaikan permohonan maaf dan sarankan siswa untuk menghubungi panitia PPDB SMKN 1 Sorong.
-6. Berikan langsung jawaban Anda sebagai asisten tanpa membuat dialog tambahan.
-7. Buatlah format jawaban yang rapi (paragraf pendek atau poin-poin). Gunakan gaya bahasa yang bersahabat dan tidak kaku.)"""
+(Penting untuk Akurasi:
+1. PERHATIKAN DENGAN SANGAT TELITI setiap istilah, nama, peran, atau jabatan yang ada pada Referensi di atas (misalnya "Guru kelas coding" vs "Pakar coding"). JANGAN SAMPAI TERTUKAR ATAU SALAH SEBUT!
+2. Jika siswa bertanya tentang peran/istilah tertentu (misal: "siapa pakar coding"), carilah baris yang tepat menuliskan "Pakar coding" dan sebutkan nama pada baris tersebut tanpa mencampuradukkan dengan nama atau jabatan lain ("Guru kelas coding", dsb).
+3. Berikan jawaban SECARA LANGSUNG, SINGKAT, TO THE POINT, dan AKURAT sesuai dengan apa yang ditanyakan siswa tanpa bertele-tele atau menambahkan informasi lain yang tidak ditanyakan.
+4. JANGAN MENGULANG poin, paragraf, atau kalimat yang sama berkali-kali. Pastikan setiap poin berbeda dan alur jawaban logis.
+5. JANGAN menggunakan backtick (`) saat menulis alamat URL/Website. Tulis dengan format Markdown Link (contoh: [Website Pendaftaran](https://contoh.id)).
+6. Jika jawaban tidak ditemukan dalam Data pedoman, sampaikan permohonan maaf dan sarankan siswa untuk menghubungi panitia PPDB SMKN 1 Sorong.
+7. Berikan langsung jawaban Anda sebagai asisten tanpa membuat dialog tambahan.
+8. Buatlah format jawaban yang rapi (paragraf pendek atau poin-poin). Gunakan gaya bahasa yang bersahabat dan tidak kaku.)"""
     
     # Ambil IP pengunjung SEBELUM generator berjalan agar context Flask request tidak terputus (Error fix)
     user_ip = get_client_ip()
