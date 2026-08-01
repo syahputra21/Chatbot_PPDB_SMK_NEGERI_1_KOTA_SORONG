@@ -317,71 +317,41 @@ def save_persistent_dataset_list(filename, action="add"):
 
 def get_persistent_dataset_list():
     """
-    Mengambil daftar dataset secara tangguh dengan MENGGABUNGKAN (UNION) data dari 
-    penyimpanan lokal, folder upload, file metadata index, dan GitHub API.
-    Memastikan dataset yang baru diunggah di Vercel tidak pernah hilang atau tertimpa oleh cache lama.
+    Mengambil daftar dataset persisten yang sedang aktif.
+    Menggunakan DATASET_LIST_FILE (/tmp/dataset_list.json) sebagai Single Source of Truth
+    agar file yang dihapus tidak pernah muncul kembali (anti-resurrection) dan file yang baru diunggah tidak hilang.
     """
-    files = set()
-
-    # 1. Ambil dari file lokal DATASET_LIST_FILE (jika ada)
+    # 1. Jika file daftar dataset aktif sudah ada di penyimpanan lokal/tmp, gunakan sebagai sumber kebenaran tunggal
     try:
         if os.path.exists(DATASET_LIST_FILE):
             with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
                 saved = json.load(f)
                 if isinstance(saved, list):
-                    for sf in saved:
-                        if sf.lower().endswith('.pdf'):
-                            files.add(sf)
+                    return sorted(list(set([sf for sf in saved if sf.lower().endswith('.pdf')])))
     except Exception as e:
         print(f"[DATASET LIST LOCAL WARNING] {e}")
 
-    # 2. Ambil dari folder fisik UPLOAD_FOLDER (jika ada file PDF)
+    # 2. Jika belum ada di lokal/tmp (kontainer baru pertama kali start), ambil dari file default proyek
+    files = set()
+    try:
+        if os.path.exists("dataset_list.json"):
+            with open("dataset_list.json", "r", encoding="utf-8") as f:
+                saved = json.load(f)
+                if isinstance(saved, list):
+                    for sf in saved:
+                        if sf.lower().endswith('.pdf'):
+                            files.add(sf)
+    except Exception:
+        pass
+
     try:
         if os.path.exists(app.config['UPLOAD_FOLDER']):
             for f in os.listdir(app.config['UPLOAD_FOLDER']):
                 if f.lower().endswith('.pdf'):
                     files.add(f)
-    except Exception as e:
-        print(f"[UPLOAD FOLDER WARNING] {e}")
+    except Exception:
+        pass
 
-    # 3. Ambil dari metadata FAISS indexed_files.json (jika ada)
-    try:
-        meta_file = os.path.join(FAISS_INDEX_PATH, "indexed_files.json")
-        if os.path.exists(meta_file):
-            with open(meta_file, "r", encoding="utf-8") as fp:
-                meta_data = json.load(fp)
-                for f in meta_data.get("indexed_files", []):
-                    if f.lower().endswith('.pdf'):
-                        files.add(f)
-    except Exception as e:
-        print(f"[FAISS META WARNING] {e}")
-
-    # 4. Ambil dari GitHub API dengan cache-busting (sebagai backup / sinkronisasi dari repo)
-    try:
-        token = os.getenv("GITHUB_TOKEN")
-        repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-        cb = int(time.time() * 1000)
-        url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json?_cb={cb}"
-        headers = {
-            "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache"
-        }
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=4) as res:
-            data = json.loads(res.read().decode())
-            if data.get("content"):
-                content_str = base64.b64decode(data["content"]).decode("utf-8")
-                github_list = json.loads(content_str)
-                for gf in github_list:
-                    if gf.lower().endswith('.pdf'):
-                        files.add(gf)
-    except Exception as e:
-        print(f"[GITHUB LIST WARNING] {e}")
-
-    # 5. Fallback minimal jika benar-benar kosong
     if not files:
         files.add("Dataset_PPDB-.pdf")
 
