@@ -580,10 +580,22 @@ def initialize_rag(force_rebuild=False):
 
     if not force_rebuild and os.path.exists(FAISS_INDEX_PATH):
         try:
-            vector_store = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
-            LAST_INDEXED_DATASETS = get_persistent_dataset_list()
-            print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal!")
-            return
+            # Validasi apakah index lokal di FAISS_INDEX_PATH cocok dengan daftar dataset aktif saat ini
+            is_index_valid = False
+            meta_file = os.path.join(FAISS_INDEX_PATH, "indexed_files.json")
+            if os.path.exists(meta_file):
+                with open(meta_file, "r", encoding="utf-8") as fp:
+                    meta_data = json.load(fp)
+                    if set(meta_data.get("indexed_files", [])) == set(get_persistent_dataset_list()):
+                        is_index_valid = True
+            
+            if is_index_valid:
+                vector_store = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
+                LAST_INDEXED_DATASETS = get_persistent_dataset_list()
+                print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal karena dataset cocok!")
+                return
+            else:
+                print("[RAG WARNING] Index lokal kedaluwarsa atau tidak cocok dengan daftar dataset! Membangun ulang RAG...")
         except Exception as e:
             print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
 
@@ -642,6 +654,11 @@ def initialize_rag(force_rebuild=False):
         vector_store = new_vector_store
         vector_store.save_local(FAISS_INDEX_PATH)
         LAST_INDEXED_DATASETS = get_persistent_dataset_list()
+        try:
+            with open(os.path.join(FAISS_INDEX_PATH, "indexed_files.json"), "w", encoding="utf-8") as fp:
+                json.dump({"indexed_files": LAST_INDEXED_DATASETS}, fp)
+        except Exception:
+            pass
         print("[INFO] Sistem RAG (Retrieval-Augmented Generation) Siap dan disimpan ke lokal!")
     else:
         # Jika folder PDF kosong
