@@ -773,31 +773,43 @@ Data pedoman:
     
     def generate():
         import time
-        max_retries = 2
+        max_retries = 4
+        success = False
+        full_response = ""
+        exact_tokens = 0
+        
+        # Coba beberapa model secara berurutan agar tidak overload di 1 model saja
+        models_to_try = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash']
+        
         for attempt in range(max_retries):
-            try:
-                local_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-                response_stream = local_client.models.generate_content_stream(
-                    model='gemini-2.5-flash-lite',
-                    contents=prompt
-                )
-                full_response = ""
-                exact_tokens = 0
-                for chunk in response_stream:
-                    if chunk.text:
-                        full_response += chunk.text
-                        yield chunk.text
-                    # Menarik data token riil langsung dari mesin Gemini (Google AI)
-                    if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
-                        exact_tokens = chunk.usage_metadata.total_token_count
-                break  # Sukses, keluar dari loop retry, lanjut ke pencatatan token
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    time.sleep(1) # Tunggu sejenak sebelum retry
-                    continue
-                else:
-                    print(f"[ERROR GEMINI] {str(e)}")
-                    yield "\nMaaf, server AI saat ini sedang sangat sibuk (Overload). Mohon coba tanyakan lagi dalam beberapa saat ya."
+            for model_name in models_to_try:
+                try:
+                    local_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+                    response_stream = local_client.models.generate_content_stream(
+                        model=model_name,
+                        contents=prompt
+                    )
+                    full_response = ""
+                    exact_tokens = 0
+                    for chunk in response_stream:
+                        if chunk.text:
+                            full_response += chunk.text
+                            yield chunk.text
+                        # Menarik data token riil langsung dari mesin Gemini (Google AI)
+                        if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
+                            exact_tokens = chunk.usage_metadata.total_token_count
+                    success = True
+                    break
+                except Exception as e:
+                    print(f"[RETRY WARNING model={model_name} attempt={attempt+1}] {e}")
+                    time.sleep(1.5)
+            if success:
+                break
+            time.sleep((attempt + 1) * 2.5)
+            
+        if not success:
+            yield "\nMaaf, server AI saat ini sedang sangat sibuk (Overload). Mohon coba tanyakan lagi dalam beberapa saat ya."
+            return
                 
         # Catat biaya token prompt dan balasan setelah stream selesai
         try:
