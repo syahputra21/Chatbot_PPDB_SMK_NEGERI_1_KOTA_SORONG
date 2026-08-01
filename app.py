@@ -588,83 +588,105 @@ def sync_missing_datasets_from_github():
 
 def initialize_rag(force_rebuild=False):
     """
-    Fungsi ini dipanggil oleh sistem untuk membaca ulang seluruh file PDF yang ada.
+    Fungsi ini dipanggil oleh sistem untuk membaca ulang file PDF dataset.
     Dijalankan saat server dinyalakan, serta tiap ada dokumen baru/dihapus.
+    Mendukung INCREMENTAL INDEXING agar tidak terkena limit API Free Tier saat upload file baru.
     """
     global vector_store, LAST_INDEXED_DATASETS
 
-    if not force_rebuild and os.path.exists(FAISS_INDEX_PATH):
+    active_pdfs = get_persistent_dataset_list()
+
+    # 1. Coba muat index yang sudah ada dari penyimpanan lokal
+    already_indexed = []
+    if os.path.exists(FAISS_INDEX_PATH):
         try:
             vector_store = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
-            LAST_INDEXED_DATASETS = get_persistent_dataset_list()
-            print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal dengan sangat cepat!")
-            return
+            meta_file = os.path.join(FAISS_INDEX_PATH, "indexed_files.json")
+            if os.path.exists(meta_file):
+                with open(meta_file, "r", encoding="utf-8") as fp:
+                    meta_data = json.load(fp)
+                    already_indexed = meta_data.get("indexed_files", [])
+            LAST_INDEXED_DATASETS = active_pdfs
+            if not force_rebuild and set(already_indexed) == set(active_pdfs):
+                print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal dengan sangat cepat!")
+                return
         except Exception as e:
             print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
+            vector_store = None
+            already_indexed = []
 
-    # Jika force_rebuild=True atau index belum ada, pastikan dataset lokal lengkap dari GitHub
+    # Pastikan dataset lokal lengkap dari GitHub
     sync_missing_datasets_from_github()
 
+    # 2. Tentukan apakah kita bisa melakukan INCREMENTAL INDEXING (hanya menambahkan file baru) atau harus FULL REBUILD
+    can_incremental = (
+        vector_store is not None 
+        and len(already_indexed) > 0 
+        and all(old_f in active_pdfs for old_f in already_indexed)
+    )
+
+    if can_incremental:
+        target_pdfs = [f for f in active_pdfs if f not in already_indexed]
+        print(f"[RAG INCREMENTAL] Hanya menanamkan file baru: {target_pdfs}")
+    else:
+        target_pdfs = active_pdfs
+        vector_store = None
+        print(f"[RAG FULL REBUILD] Membangun ulang index dari awal untuk: {target_pdfs}")
+
     all_text = ""
-    # 1. Baca HANYA file PDF yang aktif terdaftar di dataset_list.json
-    active_pdfs = get_persistent_dataset_list()
-    for f in active_pdfs:
+    for f in target_pdfs:
         if f.lower().endswith('.pdf'):
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], f)
             if os.path.exists(filepath):
                 try:
                     reader = PdfReader(filepath)
-                    # 2. Ekstrak huruf/teks dari seluruh halamannya
                     for p in reader.pages: 
                         all_text += p.extract_text() or ""
                 except Exception as e:
                     print(f"[RAG READ WARNING] Gagal membaca {f}: {e}")
-    
-    # 3. Masukkan ke memori AI jika teks tidak kosong
-    if all_text:
-        # Gunakan chunk size 1500 agar potongan referensi jauh lebih spesifik dan akurat saat ditanyakan siswa
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300)
-        chunks = splitter.split_text(all_text)
-        docs = [Document(page_content=t) for t in chunks]
-        
-        import time
-        new_vector_store = None
-        batch_size = 12  # Ukuran optimal (12 chunk = ~4500 token) agar aman dari batas token per menit Free Tier Gemini
-        
-        for i in range(0, len(docs), batch_size):
-            batch = docs[i:i+batch_size]
-            success = False
-            for attempt in range(7):
-                try:
-                    if new_vector_store is None:
-                        new_vector_store = FAISS.from_documents(batch, embeddings)
-                    else:
-                        new_vector_store.add_documents(batch)
-                    success = True
-                    break
-                except Exception as e:
-                    err_str = str(e).lower()
-                    if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "limit" in err_str:
-                        wait_time = (attempt + 1) * 2
-                        print(f"[RAG RATE LIMIT] Terkena limit API, menunggu {wait_time} detik untuk coba lagi...")
-                        time.sleep(wait_time)
-                    else:
-                        raise e
-            if not success:
-                raise Exception("Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit.")
-            time.sleep(0.4)  # Jeda aman 400ms agar kuota RPM dan TPM Free Tier tidak terlampaui
+
+    # 3. Masukkan ke memori AI jika ada teks yang perlu ditambahkan/dibangun
+    if all_text or vector_store is None:
+        if all_text:
+            splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300)
+            chunks = splitter.split_text(all_text)
+            docs = [Document(page_content=t) for t in chunks]
             
-        vector_store = new_vector_store
-        vector_store.save_local(FAISS_INDEX_PATH)
-        LAST_INDEXED_DATASETS = get_persistent_dataset_list()
-        try:
-            with open(os.path.join(FAISS_INDEX_PATH, "indexed_files.json"), "w", encoding="utf-8") as fp:
-                json.dump({"indexed_files": LAST_INDEXED_DATASETS}, fp)
-        except Exception:
-            pass
-        print("[INFO] Sistem RAG (Retrieval-Augmented Generation) Siap dan disimpan ke lokal!")
+            import time
+            batch_size = 10
+            for i in range(0, len(docs), batch_size):
+                batch = docs[i:i+batch_size]
+                success = False
+                for attempt in range(8):
+                    try:
+                        if vector_store is None:
+                            vector_store = FAISS.from_documents(batch, embeddings)
+                        else:
+                            vector_store.add_documents(batch)
+                        success = True
+                        break
+                    except Exception as e:
+                        err_str = str(e).lower()
+                        if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "limit" in err_str:
+                            wait_time = (attempt + 1) * 3
+                            print(f"[RAG RATE LIMIT] Terkena limit API, menunggu {wait_time} detik untuk coba lagi...")
+                            time.sleep(wait_time)
+                        else:
+                            raise e
+                if not success:
+                    raise Exception("Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit.")
+                time.sleep(0.5)
+
+        if vector_store:
+            vector_store.save_local(FAISS_INDEX_PATH)
+            LAST_INDEXED_DATASETS = active_pdfs
+            try:
+                with open(os.path.join(FAISS_INDEX_PATH, "indexed_files.json"), "w", encoding="utf-8") as fp:
+                    json.dump({"indexed_files": active_pdfs}, fp)
+            except Exception:
+                pass
+            print("[INFO] Sistem RAG (Retrieval-Augmented Generation) Siap dan disimpan ke lokal!")
     else:
-        # Jika folder PDF kosong
         vector_store = None
         LAST_INDEXED_DATASETS = []
 
