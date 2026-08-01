@@ -538,12 +538,58 @@ vector_store = None
 if not (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")):
     FAISS_INDEX_PATH = os.path.join(basedir, "faiss_index")
 
+def sync_missing_datasets_from_github():
+    """Mengunduh file PDF dari GitHub ke lokal jika ada dataset baru yang terdaftar di dataset_list.json namun belum ada di folder lokal"""
+    downloaded_any = False
+    try:
+        token = os.getenv("GITHUB_TOKEN")
+        repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+        files = get_persistent_dataset_list()
+        for fn in files:
+            if not fn.lower().endswith('.pdf'):
+                continue
+            local_path = os.path.join(app.config['UPLOAD_FOLDER'], fn)
+            if not os.path.exists(local_path):
+                try:
+                    encoded_fn = urllib.parse.quote(fn)
+                    url = f"https://api.github.com/repos/{repo}/contents/dataset/{encoded_fn}"
+                    headers = {"User-Agent": "Chatbot-PPDB-SMKN1-Sorong"}
+                    if token:
+                        headers["Authorization"] = f"Bearer {token}"
+                    req = urllib.request.Request(url, headers=headers)
+                    with urllib.request.urlopen(req, timeout=5) as res:
+                        data = json.loads(res.read().decode())
+                        if data.get("content"):
+                            with open(local_path, "wb") as f_out:
+                                f_out.write(base64.b64decode(data["content"]))
+                            print(f"[GITHUB FETCH] Berhasil mengunduh {fn} ke lokal.")
+                            downloaded_any = True
+                except Exception as e:
+                    print(f"[GITHUB FETCH WARNING] Gagal mengunduh {fn}: {e}")
+    except Exception as e:
+        print(f"[SYNC DATASETS WARNING] {e}")
+    return downloaded_any
+
 def initialize_rag(force_rebuild=False):
     """
     Fungsi ini dipanggil oleh sistem untuk membaca ulang seluruh file PDF yang ada.
     Dijalankan saat server dinyalakan, serta tiap ada dokumen baru/dihapus.
     """
     global vector_store
+
+    # 1. Pastikan semua file dataset yang terdaftar di dataset_list.json sudah ada di lokal
+    downloaded_new = sync_missing_datasets_from_github()
+    if downloaded_new:
+        force_rebuild = True
+
+    # 2. Cek apakah ada perbedaan daftar file lokal dengan daftar persisten
+    try:
+        local_pdfs = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.lower().endswith('.pdf')]
+        registered_pdfs = get_persistent_dataset_list()
+        if set(local_pdfs) != set(registered_pdfs):
+            force_rebuild = True
+    except:
+        pass
     
     if not force_rebuild and os.path.exists(FAISS_INDEX_PATH):
         try:
@@ -554,13 +600,19 @@ def initialize_rag(force_rebuild=False):
             print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
 
     all_text = ""
-    # 1. Baca semua file di folder "data" yang berakhiran ".pdf"
-    for f in os.listdir(app.config['UPLOAD_FOLDER']):
-        if f.endswith('.pdf'):
-            reader = PdfReader(os.path.join(app.config['UPLOAD_FOLDER'], f))
-            # 2. Ekstrak huruf/teks dari seluruh halamannya
-            for p in reader.pages: 
-                all_text += p.extract_text() or ""
+    # 1. Baca HANYA file PDF yang aktif terdaftar di dataset_list.json
+    active_pdfs = get_persistent_dataset_list()
+    for f in active_pdfs:
+        if f.lower().endswith('.pdf'):
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], f)
+            if os.path.exists(filepath):
+                try:
+                    reader = PdfReader(filepath)
+                    # 2. Ekstrak huruf/teks dari seluruh halamannya
+                    for p in reader.pages: 
+                        all_text += p.extract_text() or ""
+                except Exception as e:
+                    print(f"[RAG READ WARNING] Gagal membaca {f}: {e}")
     
     # 3. Masukkan ke memori AI jika teks tidak kosong
     if all_text:
@@ -648,6 +700,13 @@ def chat():
     msg = request.json.get('message', '')
     if not msg: 
         return jsonify({"reply": "Pesan kosong."})
+    
+    # Pastikan file dataset baru diunduh dan index RAG diperbarui jika ada dokumen baru dari server GitHub
+    try:
+        if sync_missing_datasets_from_github():
+            initialize_rag(force_rebuild=True)
+    except Exception as e:
+        print(f"[CHAT SYNC RAG WARNING] {e}")
     
     context = ""
     # Ambil referensi dokumen yang topiknya mirip/sama dengan chat siswa
@@ -1083,13 +1142,17 @@ def upload():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         f.save(filepath)
         try:
-            initialize_rag(force_rebuild=True) # WAJIB dipanggil agar AI pintar mengenai PDF yang baru saja masuk
-            save_persistent_dataset_list(filename, "add")
-            threading.Thread(target=sync_pdf_to_github, args=(filename, filepath, "upload"), daemon=True).start()
+            save_persistent_dataset_list(filename, "add") # 1. Daftarkan dulu ke daftar dataset aktif
+            try:
+                sync_pdf_to_github(filename, filepath, "upload") # 2. Simpan permanen ke GitHub secara sinkron
+            except Exception as e:
+                print(f"[GITHUB UPLOAD WARNING] {e}")
+            initialize_rag(force_rebuild=True) # 3. Bangun ulang RAG (sekarang file baru sudah masuk dalam active_pdfs)
             return jsonify({"success": True})
         except Exception as e:
             try:
                 os.remove(filepath) # Hapus file karena gagal diproses
+                save_persistent_dataset_list(filename, "remove")
                 initialize_rag(force_rebuild=False) # Kembalikan state index sebelumnya
             except:
                 pass
@@ -1114,11 +1177,11 @@ def delete():
     except Exception as e:
         print(f"[SAVE DATASET LIST WARNING] {e}")
 
-    # 2. Hapus file PDF dari GitHub repository agar persisten di Vercel
+    # 2. Hapus file PDF dari GitHub repository agar persisten di Vercel (secara sinkron)
     try:
-        threading.Thread(target=sync_pdf_to_github, args=(fn, None, "delete"), daemon=True).start()
+        sync_pdf_to_github(fn, None, "delete")
     except Exception as e:
-        print(f"[GITHUB DELETE THREAD WARNING] {e}")
+        print(f"[GITHUB DELETE WARNING] {e}")
 
     # 3. Coba hapus file lokal jika ada (jangan error jika di Vercel read-only)
     try:
