@@ -531,7 +531,7 @@ def log_visit():
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Model Embedding untuk mencerna teks PDF mentah menjadi vektor angka
-embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2", google_api_key=os.getenv("GEMINI_API_KEY"))
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
 vector_store = None
 
 # FAISS_INDEX_PATH diatur secara dinamis (menggunakan /tmp di Vercel agar mendukung Read-Write)
@@ -612,16 +612,30 @@ def initialize_rag(force_rebuild=False):
         
         import time
         new_vector_store = None
-        batch_size = 20
+        batch_size = 10
         
         for i in range(0, len(docs), batch_size):
             batch = docs[i:i+batch_size]
-            if new_vector_store is None:
-                new_vector_store = FAISS.from_documents(batch, embeddings)
-            else:
-                new_vector_store.add_documents(batch)
-            # Memberi jeda tiap pemrosesan batch agar server Google tidak menolak koneksi (Rate limit)
-            time.sleep(3)
+            success = False
+            for attempt in range(4):
+                try:
+                    if new_vector_store is None:
+                        new_vector_store = FAISS.from_documents(batch, embeddings)
+                    else:
+                        new_vector_store.add_documents(batch)
+                    success = True
+                    break
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "limit" in err_str:
+                        wait_time = (attempt + 1) * 8
+                        print(f"[RAG RATE LIMIT] Terkena limit API, menunggu {wait_time} detik untuk coba lagi...")
+                        time.sleep(wait_time)
+                    else:
+                        raise e
+            if not success:
+                raise Exception("Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit.")
+            time.sleep(2)
             
         vector_store = new_vector_store
         vector_store.save_local(FAISS_INDEX_PATH)
