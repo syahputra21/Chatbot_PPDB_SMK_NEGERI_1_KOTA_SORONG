@@ -640,7 +640,7 @@ def initialize_rag(force_rebuild=False):
         
         import time
         new_vector_store = None
-        batch_size = 10
+        batch_size = 40  # Diperbesar agar jumlah request batch jauh lebih sedikit dan selesai dengan sangat cepat
         
         for i in range(0, len(docs), batch_size):
             batch = docs[i:i+batch_size]
@@ -656,14 +656,14 @@ def initialize_rag(force_rebuild=False):
                 except Exception as e:
                     err_str = str(e).lower()
                     if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "limit" in err_str:
-                        wait_time = (attempt + 1) * 8
+                        wait_time = (attempt + 1) * 3
                         print(f"[RAG RATE LIMIT] Terkena limit API, menunggu {wait_time} detik untuk coba lagi...")
                         time.sleep(wait_time)
                     else:
                         raise e
             if not success:
                 raise Exception("Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit.")
-            time.sleep(2)
+            time.sleep(0.15)  # Jeda singkat 150ms agar tidak lambat saat upload
             
         vector_store = new_vector_store
         vector_store.save_local(FAISS_INDEX_PATH)
