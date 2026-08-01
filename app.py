@@ -258,25 +258,27 @@ def save_persistent_api_usage(ip, tokens_used):
 
 
 def sync_dataset_list_to_github():
-    """Sinkronisasi dataset_list.json ke GitHub dengan pesan [skip ci] agar tidak memicu build Vercel ulang"""
+    """Sinkronisasi dataset_list.json ke GitHub dengan cache-busting agar selalu memperbarui SHA terbaru"""
     token = os.getenv("GITHUB_TOKEN")
     if not token or not os.path.exists(DATASET_LIST_FILE):
         return
     repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-    url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "Chatbot-PPDB-SMKN1-Sorong"
-    }
     try:
+        cb = int(time.time() * 1000)
+        url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json?_cb={cb}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
+            "Cache-Control": "no-cache, no-store, must-revalidate"
+        }
         sha = None
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=4) as res:
                 data = json.loads(res.read().decode())
                 sha = data.get("sha")
-        except:
+        except Exception:
             pass
         with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
             content_b64 = base64.b64encode(f.read().encode("utf-8")).decode("utf-8")
@@ -287,27 +289,24 @@ def sync_dataset_list_to_github():
         }
         if sha:
             payload["sha"] = sha
-        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="PUT")
-        with urllib.request.urlopen(req) as res:
+        put_url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
+        req = urllib.request.Request(put_url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="PUT")
+        with urllib.request.urlopen(req, timeout=5) as res:
             print("[GITHUB SYNC] Daftar dataset berhasil disinkronkan ke GitHub.")
     except Exception as e:
         print(f"[GITHUB SYNC WARNING] Gagal sinkronisasi daftar dataset: {e}")
 
 
 def save_persistent_dataset_list(filename, action="add"):
-    """Menyimpan nama file PDF dataset secara persisten ke JSON dan sinkronisasi ke GitHub"""
+    """Menyimpan nama file PDF dataset secara persisten dan SELALU membaca daftar terbaru dari GitHub API agar tidak tertimpa cache kontainer lama"""
     try:
-        files = []
-        if os.path.exists(DATASET_LIST_FILE):
-            with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
-                try:
-                    files = json.load(f)
-                except:
-                    files = []
+        # 1. AMBIL daftar dataset paling mutakhir langsung dari GitHub/sumber kebenaran sebelum modifikasi
+        files = list(get_persistent_dataset_list())
         if action == "add" and filename not in files:
             files.append(filename)
         elif action == "remove" and filename in files:
-            files.remove(filename)
+            files = [f for f in files if f != filename]
+        files = sorted(list(set([f for f in files if f.lower().endswith('.pdf')])))
         with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
             json.dump(files, f, indent=4)
         if os.getenv("GITHUB_TOKEN"):
@@ -317,24 +316,26 @@ def save_persistent_dataset_list(filename, action="add"):
 
 
 def get_persistent_dataset_list():
-    """Mengambil daftar dataset persisten. Di Vercel wajib mengecek GitHub terlebih dahulu agar semua kontainer Lambda selalu sinkron & tidak menampilkan data lama."""
+    """Mengambil daftar dataset persisten dengan cache-busting timestamp agar GitHub CDN tidak pernah mengembalikan data lama"""
     files = set()
     is_vercel = os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")
     
-    # 1. Jika berjalan di server Vercel, UTAMAKAN ambil daftar terbaru dari GitHub API agar tidak terkena cache kontainer lama
+    # 1. Di server Vercel, WAJIB ambil dari GitHub API dengan cache-busting parameter (_cb) agar bebas dari CDN cache
     if is_vercel:
         try:
             token = os.getenv("GITHUB_TOKEN")
             repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-            url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
+            cb = int(time.time() * 1000)
+            url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json?_cb={cb}"
             headers = {
                 "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
-                "Cache-Control": "no-cache, no-store, must-revalidate"
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache"
             }
             if token:
                 headers["Authorization"] = f"Bearer {token}"
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=4) as res:
+            with urllib.request.urlopen(req, timeout=5) as res:
                 data = json.loads(res.read().decode())
                 if data.get("content"):
                     content_str = base64.b64decode(data["content"]).decode("utf-8")
@@ -353,7 +354,7 @@ def get_persistent_dataset_list():
         except Exception as e:
             print(f"[GITHUB LIST WARNING] {e}")
 
-    # 2. Jika bukan Vercel atau panggilan GitHub di atas gagal, baru baca dari DATASET_LIST_FILE lokal
+    # 2. Jika bukan Vercel atau GitHub API gagal, baru baca dari DATASET_LIST_FILE lokal
     try:
         if os.path.exists(DATASET_LIST_FILE):
             with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
