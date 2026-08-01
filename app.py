@@ -768,12 +768,13 @@ Data pedoman:
 {history_text}Pertanyaan Siswa saat ini: {msg}
 
 (Penting: 
-1. Berikan jawaban SECARA SPESIFIK dan AKURAT HANYA berdasarkan Data pedoman di atas. Jangan berhalusinasi informasi.
-2. JANGAN MENGULANG poin, paragraf, atau kalimat yang sama berkali-kali. Pastikan setiap poin berbeda dan alur jawaban logis.
-3. JANGAN menggunakan backtick (`) saat menulis alamat URL/Website. Tulis dengan format Markdown Link (contoh: [Website Pendaftaran](https://contoh.id)).
-4. Jika jawaban tidak ditemukan dalam Data pedoman, sampaikan permohonan maaf dan sarankan siswa untuk menghubungi panitia PPDB SMKN 1 Sorong.
-5. Berikan langsung jawaban Anda sebagai asisten tanpa membuat dialog tambahan.
-6. Buatlah format jawaban yang rapi (paragraf pendek atau poin-poin). Gunakan gaya bahasa yang bersahabat dan tidak kaku.)"""
+1. Berikan jawaban SECARA LANGSUNG, SINGKAT, TO THE POINT, dan AKURAT sesuai dengan apa yang ditanyakan siswa tanpa bertele-tele atau menambahkan informasi lain yang tidak ditanyakan.
+2. Jika di dalam Data pedoman terdapat informasi spesifik yang cocok dengan pertanyaan (misalnya nama guru, syarat, atau jadwal tertentu), langsung sebutkan informasi tersebut dengan jelas.
+3. JANGAN MENGULANG poin, paragraf, atau kalimat yang sama berkali-kali. Pastikan setiap poin berbeda dan alur jawaban logis.
+4. JANGAN menggunakan backtick (`) saat menulis alamat URL/Website. Tulis dengan format Markdown Link (contoh: [Website Pendaftaran](https://contoh.id)).
+5. Jika jawaban tidak ditemukan dalam Data pedoman, sampaikan permohonan maaf dan sarankan siswa untuk menghubungi panitia PPDB SMKN 1 Sorong.
+6. Berikan langsung jawaban Anda sebagai asisten tanpa membuat dialog tambahan.
+7. Buatlah format jawaban yang rapi (paragraf pendek atau poin-poin). Gunakan gaya bahasa yang bersahabat dan tidak kaku.)"""
     
     # Ambil IP pengunjung SEBELUM generator berjalan agar context Flask request tidak terputus (Error fix)
     user_ip = get_client_ip()
