@@ -533,6 +533,7 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # Model Embedding untuk mencerna teks PDF mentah menjadi vektor angka
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
 vector_store = None
+LAST_INDEXED_DATASETS = None
 
 # FAISS_INDEX_PATH diatur secara dinamis (menggunakan /tmp di Vercel agar mendukung Read-Write)
 if not (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")):
@@ -575,11 +576,12 @@ def initialize_rag(force_rebuild=False):
     Fungsi ini dipanggil oleh sistem untuk membaca ulang seluruh file PDF yang ada.
     Dijalankan saat server dinyalakan, serta tiap ada dokumen baru/dihapus.
     """
-    global vector_store
+    global vector_store, LAST_INDEXED_DATASETS
 
     if not force_rebuild and os.path.exists(FAISS_INDEX_PATH):
         try:
             vector_store = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
+            LAST_INDEXED_DATASETS = get_persistent_dataset_list()
             print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal!")
             return
         except Exception as e:
@@ -605,8 +607,8 @@ def initialize_rag(force_rebuild=False):
     
     # 3. Masukkan ke memori AI jika teks tidak kosong
     if all_text:
-        # Memperbesar chunk size agar jumlah total potongan tidak melanggar Rate Limit API Gemini (100 request)
-        splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=300)
+        # Gunakan chunk size 1500 agar potongan referensi jauh lebih spesifik dan akurat saat ditanyakan siswa
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300)
         chunks = splitter.split_text(all_text)
         docs = [Document(page_content=t) for t in chunks]
         
@@ -639,10 +641,12 @@ def initialize_rag(force_rebuild=False):
             
         vector_store = new_vector_store
         vector_store.save_local(FAISS_INDEX_PATH)
+        LAST_INDEXED_DATASETS = get_persistent_dataset_list()
         print("[INFO] Sistem RAG (Retrieval-Augmented Generation) Siap dan disimpan ke lokal!")
     else:
         # Jika folder PDF kosong
         vector_store = None
+        LAST_INDEXED_DATASETS = []
 
 # Jalankan inisialisasi pada saat server pertama direstart
 init_db()
@@ -704,12 +708,22 @@ def chat():
     if not msg: 
         return jsonify({"reply": "Pesan kosong."})
     
+    # Pastikan file dataset baru diunduh dan index RAG diperbarui jika ada dokumen baru yang diupload ke server GitHub
+    try:
+        current_list = get_persistent_dataset_list()
+        if LAST_INDEXED_DATASETS is None or set(current_list) != set(LAST_INDEXED_DATASETS):
+            print("[CHAT AUTO-SYNC] Terdeteksi perubahan dataset baru! Mengunduh dari GitHub & memperbarui RAG...")
+            sync_missing_datasets_from_github()
+            initialize_rag(force_rebuild=True)
+    except Exception as e:
+        print(f"[CHAT SYNC RAG WARNING] {e}")
+
     context = ""
     # Ambil referensi dokumen yang topiknya mirip/sama dengan chat siswa
     if vector_store:
         try:
-            # K-diperbesar agar AI dapat membaca lebih banyak referensi dari dataset
-            docs = vector_store.similarity_search(msg, k=8)
+            # K-diperbesar ke 15 agar AI membaca cakupan referensi yang jauh lebih luas dari seluruh dataset
+            docs = vector_store.similarity_search(msg, k=15)
             context = "\n".join([d.page_content for d in docs])
         except Exception: 
             pass
