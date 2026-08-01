@@ -317,40 +317,54 @@ def save_persistent_dataset_list(filename, action="add"):
 
 def get_persistent_dataset_list():
     """
-    Mengambil daftar dataset persisten yang sedang aktif.
-    Menggunakan DATASET_LIST_FILE (/tmp/dataset_list.json) sebagai Single Source of Truth
-    agar file yang dihapus tidak pernah muncul kembali (anti-resurrection) dan file yang baru diunggah tidak hilang.
+    Mengambil daftar dataset persisten secara REAL-TIME dari folder 'dataset/' di repository GitHub.
+    Menjamin setiap kontainer di Vercel selalu membaca file PDF baru yang diunggah pengguna
+    serta tidak pernah memunculkan kembali file yang sudah dihapus!
     """
-    # 1. Jika file daftar dataset aktif sudah ada di penyimpanan lokal/tmp, gunakan sebagai sumber kebenaran tunggal
-    try:
-        if os.path.exists(DATASET_LIST_FILE):
-            with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
-                saved = json.load(f)
-                if isinstance(saved, list):
-                    return sorted(list(set([sf for sf in saved if sf.lower().endswith('.pdf')])))
-    except Exception as e:
-        print(f"[DATASET LIST LOCAL WARNING] {e}")
-
-    # 2. Jika belum ada di lokal/tmp (kontainer baru pertama kali start), ambil dari file default proyek
     files = set()
-    try:
-        if os.path.exists("dataset_list.json"):
-            with open("dataset_list.json", "r", encoding="utf-8") as f:
-                saved = json.load(f)
-                if isinstance(saved, list):
-                    for sf in saved:
-                        if sf.lower().endswith('.pdf'):
-                            files.add(sf)
-    except Exception:
-        pass
 
+    # 1. SUMBER KEBENARAN UTAMA (VERCEL): Cek daftar file di GitHub repo folder /dataset/
     try:
-        if os.path.exists(app.config['UPLOAD_FOLDER']):
-            for f in os.listdir(app.config['UPLOAD_FOLDER']):
-                if f.lower().endswith('.pdf'):
-                    files.add(f)
-    except Exception:
-        pass
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") or os.getenv("GITHUB_TOKEN"):
+            token = os.getenv("GITHUB_TOKEN")
+            repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+            url = f"https://api.github.com/repos/{repo}/contents/dataset"
+            headers = {"User-Agent": "Chatbot-PPDB-SMKN1-Sorong"}
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=3) as res:
+                items = json.loads(res.read().decode())
+                if isinstance(items, list):
+                    for item in items:
+                        name = item.get("name", "")
+                        if name.lower().endswith(".pdf"):
+                            files.add(name)
+    except Exception as e:
+        print(f"[GITHUB DATASET LIST WARNING] {e}")
+
+    # 2. Jika GitHub API tidak aktif/gagal, cek lokal /tmp/dataset_list.json
+    if not files:
+        try:
+            if os.path.exists(DATASET_LIST_FILE):
+                with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                    if isinstance(saved, list):
+                        for sf in saved:
+                            if sf.lower().endswith('.pdf'):
+                                files.add(sf)
+        except Exception:
+            pass
+
+    # 3. Fallback terakhir dari folder lokal
+    if not files:
+        try:
+            if os.path.exists(app.config['UPLOAD_FOLDER']):
+                for f in os.listdir(app.config['UPLOAD_FOLDER']):
+                    if f.lower().endswith('.pdf'):
+                        files.add(f)
+        except Exception:
+            pass
 
     if not files:
         files.add("Dataset_PPDB-.pdf")
