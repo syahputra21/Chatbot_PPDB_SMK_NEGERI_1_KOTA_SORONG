@@ -85,7 +85,8 @@ def sync_pdf_to_github(filename, filepath=None, action="upload"):
         return
     
     repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-    url = f"https://api.github.com/repos/{repo}/contents/dataset/{filename}"
+    encoded_fn = urllib.parse.quote(filename)
+    url = f"https://api.github.com/repos/{repo}/contents/dataset/{encoded_fn}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json",
@@ -309,7 +310,7 @@ def save_persistent_dataset_list(filename, action="add"):
             files.remove(filename)
         with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
             json.dump(files, f, indent=4)
-        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        if os.getenv("GITHUB_TOKEN"):
             sync_dataset_list_to_github()
     except Exception as e:
         print(f"[PERSISTENT DATASET WARNING] {e}")
@@ -1094,14 +1095,36 @@ def upload():
 def delete():
     """Menghapus PDF tertentu dari folder Data dan menyesuaikan otak AI."""
     fn = request.json.get('filename')
+    if not fn:
+        return jsonify({"success": False, "error": "Filename kosong"}), 400
+
+    # 1. Hapus dari daftar dataset persisten (dataset_list.json & sinkron ke GitHub)
     try:
-        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], fn))
         save_persistent_dataset_list(fn, "remove")
-        initialize_rag(force_rebuild=True)
+    except Exception as e:
+        print(f"[SAVE DATASET LIST WARNING] {e}")
+
+    # 2. Hapus file PDF dari GitHub repository agar persisten di Vercel
+    try:
         threading.Thread(target=sync_pdf_to_github, args=(fn, None, "delete"), daemon=True).start()
-        return jsonify({"success": True})
-    except Exception: 
-        return jsonify({"success": False})
+    except Exception as e:
+        print(f"[GITHUB DELETE THREAD WARNING] {e}")
+
+    # 3. Coba hapus file lokal jika ada (jangan error jika di Vercel read-only)
+    try:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], fn)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    except Exception as e:
+        print(f"[REMOVE LOCAL FILE WARNING] {e}")
+
+    # 4. Perbarui RAG knowledge base
+    try:
+        initialize_rag(force_rebuild=True)
+    except Exception as e:
+        print(f"[RAG REBUILD WARNING] {e}")
+
+    return jsonify({"success": True})
 
 @app.route('/api/logout', methods=['POST'])
 def logout(): 
