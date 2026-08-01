@@ -317,24 +317,18 @@ def save_persistent_dataset_list(filename, action="add"):
 
 
 def get_persistent_dataset_list():
-    """Mengambil daftar dataset gabungan lokal, JSON persisten, dan dari GitHub API"""
-    files = set()
-    try:
-        if os.path.exists(app.config['UPLOAD_FOLDER']):
-            for f in os.listdir(app.config['UPLOAD_FOLDER']):
-                if f.lower().endswith('.pdf'):
-                    files.add(f)
-    except:
-        pass
+    """Mengambil daftar dataset persisten (DATASET_LIST_FILE sebagai Single Source of Truth)"""
     try:
         if os.path.exists(DATASET_LIST_FILE):
             with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
                 saved = json.load(f)
-                for sf in saved:
-                    if sf.lower().endswith('.pdf'):
-                        files.add(sf)
-    except:
-        pass
+                if isinstance(saved, list):
+                    return sorted(list(set([sf for sf in saved if sf.lower().endswith('.pdf')])))
+    except Exception as e:
+        print(f"[DATASET LIST WARNING] {e}")
+
+    # Fallback ke GitHub API / file lokal hanya jika DATASET_LIST_FILE belum ada (cold-start)
+    files = set()
     try:
         if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
             token = os.getenv("GITHUB_TOKEN")
@@ -354,7 +348,23 @@ def get_persistent_dataset_list():
                             files.add(gf)
     except Exception as e:
         print(f"[GITHUB LIST WARNING] {e}")
-    return sorted(list(files))
+
+    try:
+        if not files and os.path.exists(app.config['UPLOAD_FOLDER']):
+            for f in os.listdir(app.config['UPLOAD_FOLDER']):
+                if f.lower().endswith('.pdf'):
+                    files.add(f)
+    except:
+        pass
+
+    result = sorted(list(files))
+    # Simpan ke DATASET_LIST_FILE agar panggilan berikutnya konsisten dan instant
+    try:
+        with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=4)
+    except:
+        pass
+    return result
 
 
 

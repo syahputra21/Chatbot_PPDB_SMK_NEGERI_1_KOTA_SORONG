@@ -775,7 +775,7 @@
                                     <p class="text-xs text-slate-400 font-medium">Dataset AI</p>
                                 </div>
                             </div>
-                            <button onclick="deleteFile('${f}')" class="text-red-600 bg-red-50 hover:bg-red-600 hover:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-all shadow-sm border border-red-200" title="Hapus Dataset ${f}">
+                            <button onclick="deleteFile('${f}', this)" class="text-red-600 bg-red-50 hover:bg-red-600 hover:text-white w-9 h-9 rounded-lg flex items-center justify-center transition-all shadow-sm border border-red-200" title="Hapus Dataset ${f}">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>`;
@@ -783,8 +783,12 @@
             } catch (e) { console.warn(e); }
         }
 
-        async function deleteFile(filename) {
+        async function deleteFile(filename, btn) {
             if (!confirm("Ingin menghapus file dataset ini?")) return;
+            if (btn) {
+                const row = btn.closest('div.p-4');
+                if (row) row.remove();
+            }
             await fetch('/api/delete_file', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename }) });
             loadFiles();
             loadStats();
