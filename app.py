@@ -577,20 +577,6 @@ def initialize_rag(force_rebuild=False):
     """
     global vector_store
 
-    # 1. Pastikan semua file dataset yang terdaftar di dataset_list.json sudah ada di lokal
-    downloaded_new = sync_missing_datasets_from_github()
-    if downloaded_new:
-        force_rebuild = True
-
-    # 2. Cek apakah ada perbedaan daftar file lokal dengan daftar persisten
-    try:
-        local_pdfs = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if f.lower().endswith('.pdf')]
-        registered_pdfs = get_persistent_dataset_list()
-        if set(local_pdfs) != set(registered_pdfs):
-            force_rebuild = True
-    except:
-        pass
-    
     if not force_rebuild and os.path.exists(FAISS_INDEX_PATH):
         try:
             vector_store = FAISS.load_local(FAISS_INDEX_PATH, embeddings, allow_dangerous_deserialization=True)
@@ -598,6 +584,9 @@ def initialize_rag(force_rebuild=False):
             return
         except Exception as e:
             print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
+
+    # Jika force_rebuild=True atau index belum ada, pastikan dataset lokal lengkap dari GitHub
+    sync_missing_datasets_from_github()
 
     all_text = ""
     # 1. Baca HANYA file PDF yang aktif terdaftar di dataset_list.json
@@ -700,13 +689,6 @@ def chat():
     msg = request.json.get('message', '')
     if not msg: 
         return jsonify({"reply": "Pesan kosong."})
-    
-    # Pastikan file dataset baru diunduh dan index RAG diperbarui jika ada dokumen baru dari server GitHub
-    try:
-        if sync_missing_datasets_from_github():
-            initialize_rag(force_rebuild=True)
-    except Exception as e:
-        print(f"[CHAT SYNC RAG WARNING] {e}")
     
     context = ""
     # Ambil referensi dokumen yang topiknya mirip/sama dengan chat siswa
