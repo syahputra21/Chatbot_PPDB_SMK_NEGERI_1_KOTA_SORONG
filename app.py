@@ -317,7 +317,43 @@ def save_persistent_dataset_list(filename, action="add"):
 
 
 def get_persistent_dataset_list():
-    """Mengambil daftar dataset persisten (DATASET_LIST_FILE sebagai Single Source of Truth)"""
+    """Mengambil daftar dataset persisten. Di Vercel wajib mengecek GitHub terlebih dahulu agar semua kontainer Lambda selalu sinkron & tidak menampilkan data lama."""
+    files = set()
+    is_vercel = os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")
+    
+    # 1. Jika berjalan di server Vercel, UTAMAKAN ambil daftar terbaru dari GitHub API agar tidak terkena cache kontainer lama
+    if is_vercel:
+        try:
+            token = os.getenv("GITHUB_TOKEN")
+            repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+            url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
+            headers = {
+                "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=4) as res:
+                data = json.loads(res.read().decode())
+                if data.get("content"):
+                    content_str = base64.b64decode(data["content"]).decode("utf-8")
+                    github_list = json.loads(content_str)
+                    for gf in github_list:
+                        if gf.lower().endswith('.pdf'):
+                            files.add(gf)
+            if files:
+                result = sorted(list(files))
+                try:
+                    with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
+                        json.dump(result, f, indent=4)
+                except:
+                    pass
+                return result
+        except Exception as e:
+            print(f"[GITHUB LIST WARNING] {e}")
+
+    # 2. Jika bukan Vercel atau panggilan GitHub di atas gagal, baru baca dari DATASET_LIST_FILE lokal
     try:
         if os.path.exists(DATASET_LIST_FILE):
             with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
@@ -327,30 +363,9 @@ def get_persistent_dataset_list():
     except Exception as e:
         print(f"[DATASET LIST WARNING] {e}")
 
-    # Fallback ke GitHub API / file lokal hanya jika DATASET_LIST_FILE belum ada (cold-start)
-    files = set()
+    # 3. Fallback terakhir ke folder lokal UPLOAD_FOLDER
     try:
-        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
-            token = os.getenv("GITHUB_TOKEN")
-            repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-            url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json"
-            headers = {"User-Agent": "Chatbot-PPDB-SMKN1-Sorong"}
-            if token:
-                headers["Authorization"] = f"Bearer {token}"
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=3) as res:
-                data = json.loads(res.read().decode())
-                if data.get("content"):
-                    content_str = base64.b64decode(data["content"]).decode("utf-8")
-                    github_list = json.loads(content_str)
-                    for gf in github_list:
-                        if gf.lower().endswith('.pdf'):
-                            files.add(gf)
-    except Exception as e:
-        print(f"[GITHUB LIST WARNING] {e}")
-
-    try:
-        if not files and os.path.exists(app.config['UPLOAD_FOLDER']):
+        if os.path.exists(app.config['UPLOAD_FOLDER']):
             for f in os.listdir(app.config['UPLOAD_FOLDER']):
                 if f.lower().endswith('.pdf'):
                     files.add(f)
@@ -358,7 +373,6 @@ def get_persistent_dataset_list():
         pass
 
     result = sorted(list(files))
-    # Simpan ke DATASET_LIST_FILE agar panggilan berikutnya konsisten dan instant
     try:
         with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=4)
