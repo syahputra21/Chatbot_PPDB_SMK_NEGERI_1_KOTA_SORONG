@@ -316,68 +316,80 @@ def save_persistent_dataset_list(filename, action="add"):
 
 
 def get_persistent_dataset_list():
-    """Mengambil daftar dataset persisten dengan cache-busting timestamp agar GitHub CDN tidak pernah mengembalikan data lama"""
+    """
+    Mengambil daftar dataset secara tangguh dengan MENGGABUNGKAN (UNION) data dari 
+    penyimpanan lokal, folder upload, file metadata index, dan GitHub API.
+    Memastikan dataset yang baru diunggah di Vercel tidak pernah hilang atau tertimpa oleh cache lama.
+    """
     files = set()
-    is_vercel = os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")
-    
-    # 1. Di server Vercel, WAJIB ambil dari GitHub API dengan cache-busting parameter (_cb) agar bebas dari CDN cache
-    if is_vercel:
-        try:
-            token = os.getenv("GITHUB_TOKEN")
-            repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-            cb = int(time.time() * 1000)
-            url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json?_cb={cb}"
-            headers = {
-                "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
-                "Cache-Control": "no-cache, no-store, must-revalidate",
-                "Pragma": "no-cache"
-            }
-            if token:
-                headers["Authorization"] = f"Bearer {token}"
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=5) as res:
-                data = json.loads(res.read().decode())
-                if data.get("content"):
-                    content_str = base64.b64decode(data["content"]).decode("utf-8")
-                    github_list = json.loads(content_str)
-                    for gf in github_list:
-                        if gf.lower().endswith('.pdf'):
-                            files.add(gf)
-            if files:
-                result = sorted(list(files))
-                try:
-                    with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
-                        json.dump(result, f, indent=4)
-                except:
-                    pass
-                return result
-        except Exception as e:
-            print(f"[GITHUB LIST WARNING] {e}")
 
-    # 2. Jika bukan Vercel atau GitHub API gagal, baru baca dari DATASET_LIST_FILE lokal
+    # 1. Ambil dari file lokal DATASET_LIST_FILE (jika ada)
     try:
         if os.path.exists(DATASET_LIST_FILE):
             with open(DATASET_LIST_FILE, "r", encoding="utf-8") as f:
                 saved = json.load(f)
                 if isinstance(saved, list):
-                    return sorted(list(set([sf for sf in saved if sf.lower().endswith('.pdf')])))
+                    for sf in saved:
+                        if sf.lower().endswith('.pdf'):
+                            files.add(sf)
     except Exception as e:
-        print(f"[DATASET LIST WARNING] {e}")
+        print(f"[DATASET LIST LOCAL WARNING] {e}")
 
-    # 3. Fallback terakhir ke folder lokal UPLOAD_FOLDER
+    # 2. Ambil dari folder fisik UPLOAD_FOLDER (jika ada file PDF)
     try:
         if os.path.exists(app.config['UPLOAD_FOLDER']):
             for f in os.listdir(app.config['UPLOAD_FOLDER']):
                 if f.lower().endswith('.pdf'):
                     files.add(f)
-    except:
-        pass
+    except Exception as e:
+        print(f"[UPLOAD FOLDER WARNING] {e}")
+
+    # 3. Ambil dari metadata FAISS indexed_files.json (jika ada)
+    try:
+        meta_file = os.path.join(FAISS_INDEX_PATH, "indexed_files.json")
+        if os.path.exists(meta_file):
+            with open(meta_file, "r", encoding="utf-8") as fp:
+                meta_data = json.load(fp)
+                for f in meta_data.get("indexed_files", []):
+                    if f.lower().endswith('.pdf'):
+                        files.add(f)
+    except Exception as e:
+        print(f"[FAISS META WARNING] {e}")
+
+    # 4. Ambil dari GitHub API dengan cache-busting (sebagai backup / sinkronisasi dari repo)
+    try:
+        token = os.getenv("GITHUB_TOKEN")
+        repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+        cb = int(time.time() * 1000)
+        url = f"https://api.github.com/repos/{repo}/contents/dataset_list.json?_cb={cb}"
+        headers = {
+            "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache"
+        }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=4) as res:
+            data = json.loads(res.read().decode())
+            if data.get("content"):
+                content_str = base64.b64decode(data["content"]).decode("utf-8")
+                github_list = json.loads(content_str)
+                for gf in github_list:
+                    if gf.lower().endswith('.pdf'):
+                        files.add(gf)
+    except Exception as e:
+        print(f"[GITHUB LIST WARNING] {e}")
+
+    # 5. Fallback minimal jika benar-benar kosong
+    if not files:
+        files.add("Dataset_PPDB-.pdf")
 
     result = sorted(list(files))
     try:
         with open(DATASET_LIST_FILE, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=4)
-    except:
+    except Exception:
         pass
     return result
 
