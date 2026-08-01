@@ -607,8 +607,8 @@ def initialize_rag(force_rebuild=False):
                     meta_data = json.load(fp)
                     already_indexed = meta_data.get("indexed_files", [])
             LAST_INDEXED_DATASETS = active_pdfs
-            if not force_rebuild and set(already_indexed) == set(active_pdfs):
-                print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal dengan sangat cepat!")
+            if not force_rebuild:
+                print("[INFO] Memuat Index RAG (FAISS) dari penyimpanan lokal seketika (tanpa blocking cold start)!")
                 return
         except Exception as e:
             print(f"[WARNING] Gagal memuat index lokal: {e}. Akan membangun ulang.")
