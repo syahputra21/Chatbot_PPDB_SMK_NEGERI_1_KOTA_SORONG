@@ -328,12 +328,16 @@ def get_persistent_dataset_list():
         if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") or os.getenv("GITHUB_TOKEN"):
             token = os.getenv("GITHUB_TOKEN")
             repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
-            url = f"https://api.github.com/repos/{repo}/contents/dataset"
-            headers = {"User-Agent": "Chatbot-PPDB-SMKN1-Sorong"}
+            url = f"https://api.github.com/repos/{repo}/contents/dataset?_t={int(time.time())}"
+            headers = {
+                "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache"
+            }
             if token:
                 headers["Authorization"] = f"Bearer {token}"
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=3) as res:
+            with urllib.request.urlopen(req, timeout=4) as res:
                 items = json.loads(res.read().decode())
                 if isinstance(items, list):
                     for item in items:
