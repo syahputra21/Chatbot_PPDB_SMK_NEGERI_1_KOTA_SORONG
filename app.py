@@ -629,12 +629,12 @@ def initialize_rag(force_rebuild=False):
         
         import time
         new_vector_store = None
-        batch_size = 40  # Diperbesar agar jumlah request batch jauh lebih sedikit dan selesai dengan sangat cepat
+        batch_size = 12  # Ukuran optimal (12 chunk = ~4500 token) agar aman dari batas token per menit Free Tier Gemini
         
         for i in range(0, len(docs), batch_size):
             batch = docs[i:i+batch_size]
             success = False
-            for attempt in range(4):
+            for attempt in range(7):
                 try:
                     if new_vector_store is None:
                         new_vector_store = FAISS.from_documents(batch, embeddings)
@@ -645,14 +645,14 @@ def initialize_rag(force_rebuild=False):
                 except Exception as e:
                     err_str = str(e).lower()
                     if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "limit" in err_str:
-                        wait_time = (attempt + 1) * 3
+                        wait_time = (attempt + 1) * 2
                         print(f"[RAG RATE LIMIT] Terkena limit API, menunggu {wait_time} detik untuk coba lagi...")
                         time.sleep(wait_time)
                     else:
                         raise e
             if not success:
                 raise Exception("Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit.")
-            time.sleep(0.15)  # Jeda singkat 150ms agar tidak lambat saat upload
+            time.sleep(0.4)  # Jeda aman 400ms agar kuota RPM dan TPM Free Tier tidak terlampaui
             
         vector_store = new_vector_store
         vector_store.save_local(FAISS_INDEX_PATH)
