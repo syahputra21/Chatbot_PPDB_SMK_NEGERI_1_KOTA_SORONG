@@ -594,7 +594,9 @@ def initialize_rag(force_rebuild=False):
     """
     global vector_store, LAST_INDEXED_DATASETS
 
+    print("\n[DEBUG RAG] ==================== START INITIALIZE RAG ====================")
     active_pdfs = get_persistent_dataset_list()
+    print(f"[DEBUG RAG] Nilai active_pdfs: {active_pdfs}")
 
     # 1. Coba muat index yang sudah ada dari penyimpanan lokal
     already_indexed = []
@@ -615,23 +617,27 @@ def initialize_rag(force_rebuild=False):
             vector_store = None
             already_indexed = []
 
+    print(f"[DEBUG RAG] Nilai already_indexed: {already_indexed}")
+
     # Pastikan dataset lokal lengkap dari GitHub
     sync_missing_datasets_from_github()
 
     # 2. Tentukan apakah kita bisa melakukan INCREMENTAL INDEXING (hanya menambahkan file baru) atau harus FULL REBUILD
+    #    Catatan: Jika force_rebuild=True (setelah upload/hapus), kita paksa rebuild target yang relevan
     can_incremental = (
-        vector_store is not None 
+        not force_rebuild
+        and vector_store is not None 
         and len(already_indexed) > 0 
         and all(old_f in active_pdfs for old_f in already_indexed)
     )
 
     if can_incremental:
         target_pdfs = [f for f in active_pdfs if f not in already_indexed]
-        print(f"[RAG INCREMENTAL] Hanya menanamkan file baru: {target_pdfs}")
+        print(f"[DEBUG RAG] Mode: INCREMENTAL | Nilai target_pdfs: {target_pdfs}")
     else:
         target_pdfs = active_pdfs
         vector_store = None
-        print(f"[RAG FULL REBUILD] Membangun ulang index dari awal untuk: {target_pdfs}")
+        print(f"[DEBUG RAG] Mode: FULL REBUILD | Nilai target_pdfs: {target_pdfs}")
 
     all_text = ""
     for f in target_pdfs:
@@ -640,16 +646,25 @@ def initialize_rag(force_rebuild=False):
             if os.path.exists(filepath):
                 try:
                     reader = PdfReader(filepath)
+                    file_text = ""
                     for p in reader.pages: 
-                        all_text += p.extract_text() or ""
+                        file_text += p.extract_text() or ""
+                    all_text += file_text
+                    preview_text = (file_text[:150] + "...") if len(file_text) > 150 else file_text
+                    print(f"[DEBUG RAG] Teks berhasil diekstrak dari '{f}' ({len(file_text)} karakter) -> Cuplikan awal: {repr(preview_text)}")
                 except Exception as e:
                     print(f"[RAG READ WARNING] Gagal membaca {f}: {e}")
+            else:
+                print(f"[DEBUG RAG WARNING] File '{f}' tidak ditemukan di {filepath}")
+
+    print(f"[DEBUG RAG] Total panjang teks gabungan (all_text): {len(all_text)} karakter")
 
     # 3. Masukkan ke memori AI jika ada teks yang perlu ditambahkan/dibangun
     if all_text or vector_store is None:
         if all_text:
             splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300)
             chunks = splitter.split_text(all_text)
+            print(f"[DEBUG RAG] Jumlah chunk yang berhasil dibuat (len(chunks)): {len(chunks)}")
             docs = [Document(page_content=t) for t in chunks]
             
             import time
@@ -677,6 +692,10 @@ def initialize_rag(force_rebuild=False):
                     raise Exception("Limit API Gemini (Free Tier) tercapai. Silakan coba lagi dalam beberapa menit.")
                 time.sleep(0.5)
 
+            print(f"[DEBUG RAG] KONFIRMASI: Berhasil menanamkan/menambahkan {len(chunks)} chunk ke dalam memori FAISS!")
+        else:
+            print("[DEBUG RAG] Peringatan: Tidak ada teks yang diekstrak (all_text kosong).")
+
         if vector_store:
             vector_store.save_local(FAISS_INDEX_PATH)
             LAST_INDEXED_DATASETS = active_pdfs
@@ -689,6 +708,7 @@ def initialize_rag(force_rebuild=False):
     else:
         vector_store = None
         LAST_INDEXED_DATASETS = []
+    print("[DEBUG RAG] ===================== END INITIALIZE RAG =====================\n")
 
 # Jalankan inisialisasi pada saat server pertama direstart
 init_db()
@@ -772,6 +792,13 @@ def chat():
                 return sum(1 for w in query_words if w in text_lower)
             
             docs_sorted = sorted(docs, key=score_doc, reverse=True)
+            print("\n[DEBUG CHAT RETRIEVER] ==================== START SIMILARITY SEARCH ====================")
+            print(f"[DEBUG CHAT RETRIEVER] Pertanyaan Siswa: '{msg}'")
+            print(f"[DEBUG CHAT RETRIEVER] Hasil docs dari vector_store.similarity_search(msg, k=12): {len(docs)} dokumen ditemukan")
+            for idx, d in enumerate(docs_sorted):
+                preview = (d.page_content[:150] + "...") if len(d.page_content) > 150 else d.page_content
+                print(f"[DEBUG CHAT RETRIEVER] [Rank {idx+1}] (Skor Kata Kunci: {score_doc(d)}) -> Cuplikan: {repr(preview)}")
+            print("[DEBUG CHAT RETRIEVER] ===================== END SIMILARITY SEARCH =====================\n")
             context = "\n\n".join([f"--- [Referensi {i+1}] ---\n{d.page_content}" for i, d in enumerate(docs_sorted)])
         except Exception: 
             pass
