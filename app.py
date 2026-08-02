@@ -921,7 +921,7 @@ def log_visitor_ip():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-def get_synced_admin_data():
+def get_synced_admin_data() -> dict:
     """Mengambil Data Statistik Pengunjung tersinkronisasi (untuk API Admin dan PDF)"""
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -1162,8 +1162,10 @@ def export_stats():
     today_visits = data["today_visits"]
     month_visits = data["month_visits"]
     year_visits = data["year_visits"]
-    visitors: list = list(data.get("visitors", []))
-    visitor_logs: list = list(data.get("visitor_logs", []))
+    raw_visitors = data.get("visitors")
+    visitors = list(raw_visitors) if isinstance(raw_visitors, (list, tuple)) else []
+    raw_logs = data.get("visitor_logs")
+    visitor_logs = list(raw_logs) if isinstance(raw_logs, (list, tuple)) else []
     
     # Buat PDF
     pdf = FPDF()
