@@ -137,9 +137,9 @@ def run_evaluation():
         verbose=True
     )
     
-    df['Nilai Precision (P)'] = Precision.tolist()
-    df['Nilai Recall (R)'] = Recall.tolist()
-    df['Nilai F1-Score'] = F1.tolist()
+    df['Nilai Precision (P)'] = [float(val) for val in Precision]
+    df['Nilai Recall (R)'] = [float(val) for val in Recall]
+    df['Nilai F1-Score'] = [float(val) for val in F1]
 
     duration = time.time() - start_time
     print(f"\n{C.GREEN}[SUKSES]{C.RESET} Evaluasi BERTScore rampung dalam {C.BOLD}{duration:.2f} detik.{C.RESET}\n")
