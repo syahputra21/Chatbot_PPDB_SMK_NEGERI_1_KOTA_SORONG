@@ -859,7 +859,7 @@ Data pedoman (diurutkan berdasarkan relevansi terbesar):
                             yield chunk.text
                         # Menarik data token riil langsung dari mesin Gemini (Google AI)
                         if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
-                            exact_tokens = chunk.usage_metadata.total_token_count
+                            exact_tokens = int(getattr(chunk.usage_metadata, 'total_token_count', 0) or 0)
                     success = True
                     break
                 except Exception as e:
@@ -876,7 +876,8 @@ Data pedoman (diurutkan berdasarkan relevansi terbesar):
         # Catat biaya token prompt dan balasan setelah stream selesai
         try:
             # Gunakan data akurat dari Google. Jika kosong, baru gunakan metode perkiraan kata.
-            tokens = exact_tokens if exact_tokens > 0 else (len(prompt.split()) + len(full_response.split()))
+            safe_exact = int(exact_tokens or 0)
+            tokens = safe_exact if safe_exact > 0 else (len(prompt.split()) + len(full_response.split()))
             conn = sqlite3.connect(DB_PATH)
             conn.execute("INSERT INTO usage (ip, tokens, ts) VALUES (?, ?, ?)", (user_ip, tokens, get_sorong_time().strftime("%Y-%m-%d %H:%M:%S WIT")))
             save_persistent_api_usage(user_ip, tokens)
@@ -1149,7 +1150,7 @@ def export_stats():
     if not session.get('logged_in'):
         return "Unauthorized", 401
         
-    from fpdf import FPDF
+    from fpdf import FPDF  # type: ignore
     import tempfile
     from flask import send_file
     
@@ -1161,8 +1162,8 @@ def export_stats():
     today_visits = data["today_visits"]
     month_visits = data["month_visits"]
     year_visits = data["year_visits"]
-    visitors = data["visitors"]
-    visitor_logs = data["visitor_logs"]
+    visitors: list = list(data.get("visitors", []))
+    visitor_logs: list = list(data.get("visitor_logs", []))
     
     # Buat PDF
     pdf = FPDF()
@@ -1194,9 +1195,10 @@ def export_stats():
     pdf.ln()
     pdf.set_font("Arial", size=10)
     for row in visitors:
-        pdf.cell(100, 8, str(row[0]), 1)
-        pdf.cell(90, 8, f"{row[1]} Akses", 1)
-        pdf.ln()
+        if isinstance(row, (list, tuple)) and len(row) >= 2:
+            pdf.cell(100, 8, str(row[0]), 1)
+            pdf.cell(90, 8, f"{row[1]} Akses", 1)
+            pdf.ln()
     pdf.ln(5)
     
     # Log Waktu Akses Perangkat
@@ -1209,10 +1211,11 @@ def export_stats():
     pdf.ln()
     pdf.set_font("Arial", size=10)
     for row in visitor_logs:
-        pdf.cell(50, 8, str(row.get('date', '-')), 1)
-        pdf.cell(50, 8, str(row.get('time', '-')), 1)
-        pdf.cell(90, 8, str(row.get('ip', '-')), 1)
-        pdf.ln()
+        if isinstance(row, dict):
+            pdf.cell(50, 8, str(row.get('date', '-')), 1)
+            pdf.cell(50, 8, str(row.get('time', '-')), 1)
+            pdf.cell(90, 8, str(row.get('ip', '-')), 1)
+            pdf.ln()
     pdf.ln(5)
         
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
