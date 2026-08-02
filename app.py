@@ -15,6 +15,7 @@ import shutil
 import base64
 import urllib.request
 import urllib.error
+import urllib.parse
 import threading
 from flask import Flask, render_template, request, jsonify, session
 from dotenv import load_dotenv
@@ -923,7 +924,17 @@ def get_synced_admin_data():
     try:
         conn = sqlite3.connect(DB_PATH)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"[DB ERROR] {e}")
+        return {
+            "visitors": [],
+            "today_visits": 0,
+            "month_visits": 0,
+            "year_visits": 0,
+            "total_tokens": 0,
+            "docs_count": 0,
+            "api_ips": [],
+            "visitor_logs": []
+        }
     
     today_str = get_sorong_time().date().isoformat()
     month_str = today_str[:7]
@@ -1237,7 +1248,7 @@ def upload():
     """Menerima unggahan File PDF dan merekam ulang ke memori AI (RAG)."""
     f = request.files.get('file')
     if f:
-        filename = secure_filename(f.filename)
+        filename = secure_filename(f.filename or "untitled.pdf")
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         f.save(filepath)
         try:
