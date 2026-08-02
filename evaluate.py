@@ -83,16 +83,16 @@ def run_evaluation():
     # 1. Siapkan Draf Kasus Pengujian / Skenario
     data = {
         "Pertanyaan": [
-            "Untuk pendaftaran peserta didik baru, apa saja pilihan program studi atau jurusan yang saat ini ditawarkan di SMK Negeri 1 Sorong?",
-            "Saya masih kurang paham mengenai tahapannya, tolong berikan panduan lengkap tata cara mendaftar sebagai siswa baru secara online maupun offline.",
-            "Apakah ada syarat tambahan seperti tes fisik atau tes bebas buta warna jika saya berminat mendaftar di program keahlian Teknik Komputer Jaringan?",
-            "Kapan jadwal resmi pendaftaran Penerimaan Peserta Didik Baru (PPDB) tahun ajaran ini akan mulai dibuka?",
-            "Mohon informasi mengenai alamat lengkap SMK Negeri 1 Kota Sorong untuk keperluan pengumpulan berkas.",
-            "Terkait proses pendaftaran awal di sekolah ini, apakah calon siswa baru diwajibkan untuk membayar sejumlah uang pendaftaran tertentu?",
-            "Apakah sekolah ini menerima pendaftaran siswa baru melalui jalur prestasi akademik atau non-akademik?",
-            "Kegiatan ekstrakurikuler apa saja yang tersedia di sekolah ini untuk pengembangan minat bakat siswa?",
-            "Berkas dan dokumen penting apa saja yang harus disiapkan oleh calon siswa baru saat melakukan daftar ulang?",
-            "Berapa total kuota penerimaan peserta didik baru yang disediakan oleh SMKN 1 Sorong pada tahun ini?"
+            "Program keahlian atau jurusan apa saja yang tersedia bagi calon peserta didik baru di SMK Negeri 1 Sorong",
+            "Bagaimana cara melakukan pendaftaran di SMK Negeri 1 Sorong",
+            "Apakah terdapat persyaratan khusus, seperti tes fisik atau tes buta warna, untuk mendaftar pada program keahlian Teknik Jaringan Komputer dan Telekomunikasi",
+            "Kapan pelaksanaan pendaftaran PPDB SMK Negeri 1 Sorong Tahun Ajaran 2026/2027 mulai dibuka",
+            "Di mana alamat lengkap SMK Negeri 1 Sorong yang digunakan untuk proses pengumpulan dan verifikasi berkas pendaftaran",
+            "Apakah calon peserta didik dikenakan biaya pada saat melakukan pendaftaran PPDB di SMK Negeri 1 Sorong",
+            "Apakah SMK Negeri 1 Sorong menerima peserta didik baru melalui jalur prestasi akademik maupun non akademik",
+            "Kegiatan ekstrakurikuler apa saja yang dapat diikuti peserta didik untuk mengembangkan minat dan bakat di SMK Negeri 1 Sorong",
+            "Dokumen dan berkas apa saja yang harus disiapkan calon peserta didik saat melakukan daftar ulang",
+            "Berapa jumlah kuota penerimaan peserta didik baru yang disediakan oleh SMK Negeri 1 Sorong pada Tahun Ajaran 2026/2027"
         ],
         "Jawaban_Reference_(Ground Truth)": [ 
             "Terdapat 9 jurusan yaitu TKJ, AKL, OTKP, BDP, Multimedia, DPIB, BKP, Geomatika, dan Perhotelan.",
