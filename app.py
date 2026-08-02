@@ -192,7 +192,7 @@ def save_persistent_visitor_log(ip, date, time_str):
             logs.insert(0, {"ip": ip, "date": date, "time": time_str})
         with open(LOGS_FILE, "w", encoding="utf-8") as f:
             json.dump(logs[:100], f, indent=4)
-        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") or os.getenv("GITHUB_TOKEN"):
             sync_visitor_logs_to_github()
     except Exception as e:
         print(f"[PERSISTENT LOG WARNING] {e}")
@@ -1043,26 +1043,30 @@ def get_synced_admin_data():
             visitor_logs.append(rec)
             existing_keys[key] = True
 
-    # Sync dari GitHub log pengunjung detail
+    # Sync dari GitHub log pengunjung detail (Sumber Kebenaran Utama untuk Vercel & Lokal agar SELALU 100% SAMA)
     try:
-        github_token = os.environ.get("GITHUB_TOKEN")
-        repo_owner = os.environ.get("GITHUB_REPO_OWNER")
-        repo_name = os.environ.get("GITHUB_REPO_NAME")
-        if github_token and repo_owner and repo_name:
-            url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/visitor_logs.json"
-            headers = {"Authorization": f"token {github_token}", "User-Agent": "Chatbot-PPDB"}
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=3) as res:
-                data = json.loads(res.read().decode())
-                if data.get("content"):
-                    content_str = base64.b64decode(data["content"]).decode("utf-8")
-                    github_logs = json.loads(content_str)
-                    existing_ips = {f"{x['ip']}_{x['date']}": True for x in visitor_logs}
-                    for glog in github_logs:
-                        key = f"{glog.get('ip')}_{glog.get('date')}"
-                        if not existing_ips.get(key):
-                            visitor_logs.append(glog)
-                            existing_ips[key] = True
+        token = os.getenv("GITHUB_TOKEN")
+        repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+        url = f"https://api.github.com/repos/{repo}/contents/visitor_logs.json?_t={int(time.time())}"
+        headers = {
+            "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache"
+        }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=4) as res:
+            data = json.loads(res.read().decode())
+            if data.get("content"):
+                content_str = base64.b64decode(data["content"]).decode("utf-8")
+                github_logs = json.loads(content_str)
+                existing_ips = {f"{x['ip']}_{x['date']}": True for x in visitor_logs}
+                for glog in github_logs:
+                    key = f"{glog.get('ip')}_{glog.get('date')}"
+                    if not existing_ips.get(key):
+                        visitor_logs.append(glog)
+                        existing_ips[key] = True
     except Exception as e:
         print(f"[GITHUB LOGS WARNING] {e}")
 
