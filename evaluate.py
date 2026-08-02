@@ -95,28 +95,28 @@ def run_evaluation():
             "Berapa jumlah kuota penerimaan peserta didik baru yang disediakan oleh SMK Negeri 1 Sorong pada Tahun Ajaran 2026/2027"
         ],
         "Jawaban_Reference_(Ground Truth)": [ 
-            "Terdapat 9 jurusan yaitu TKJ, AKL, OTKP, BDP, Multimedia, DPIB, BKP, Geomatika, dan Perhotelan.",
-            "Pendaftaran dilakukan secara online melalui website resmi atau datang langsung ke sekolah.",
-            "Syarat masuk TKJ antara lain nilai rapot yang cukup, tidak buta warna, dan lulus tes fisik.",
-            "Pendaftaran PPDB biasanya dibuka pada bulan Juni hingga Juli setiap tahunnya.",
-            "Alamat sekolah berada di Jalan Jendral Sudirman, Kota Sorong, Papua Barat Daya.",
-            "Pendaftaran PPDB di SMKN 1 Sorong tidak dipungut biaya alias gratis.",
-            "Ya, terdapat jalur prestasi akademik dan non-akademik dengan kuota tertentu.",
-            "Terdapat berbagai ekstrakurikuler seperti Pramuka, Paskibra, PMR, Rohis, dan Olahraga.",
-            "Berkas daftar ulang meliputi fotokopi SKHU, pas foto 3x4, fotokopi KK, dan akta kelahiran.",
-            "Kuota penerimaan siswa baru tahun ini adalah sebanyak 360 siswa yang terbagi ke dalam 9 jurusan."
+            "SMK Negeri 1 Sorong menyediakan 9 Program Keahlian, yaitu Akuntansi dan Keuangan Lembaga, Manajemen Perkantoran dan Layanan Bisnis, Pemasaran (Kelas Alfamart), Teknik Jaringan Komputer dan Telekomunikasi, Desain Komunikasi Visual, Pengembangan Perangkat Lunak dan Gim, Teknik Geologi Pertambangan, Teknik Perminyakan, dan Teknik Energi Terbarukan.",
+            "Pendaftaran dilakukan secara online dan offline. Calon peserta didik terlebih dahulu melakukan pendaftaran melalui sistem pendaftaran online (SPMB) pada laman spmbkota.sorongdigital.id, kemudian datang ke sekolah dengan membawa bukti pendaftaran dan dokumen persyaratan untuk proses verifikasi.",
+            "Tidak ada persyaratan khusus seperti tes fisik atau tes bebas buta warna untuk mendaftar pada program keahlian Teknik Jaringan Komputer dan Telekomunikasi. Tahapan seleksi umum hanya terdiri atas tes tertulis dan wawancara serta pemenuhan batas usia maksimal 21 tahun.",
+            "Pelaksanaan pendaftaran PPDB SMK Negeri 1 Sorong Tahun Ajaran 2026/2027 dibuka mulai tanggal 17 Juni 2026 sampai dengan 20 Juni 2026.",
+            "SMK Negeri 1 Sorong beralamat di Jl. Basuki Rahmat, Kilometer 8, Kelurahan Malaingkedi, Kecamatan Malaimsimsa, Kota Sorong, Provinsi Papua Barat Daya. Gedung pelayanan panitia berada di sebelah kiri jalur masuk sekolah (bangunan dua lantai berwarna biru).",
+            "Pendaftaran PPDB dan proses daftar ulang di SMK Negeri 1 Sorong tidak dikenakan biaya (gratis). Selain itu, sekolah juga tidak memungut biaya uang sekolah atau SPP.",
+            "Ya, penerimaan peserta didik baru di SMK Negeri 1 Sorong dilaksanakan melalui Jalur Prestasi, yaitu jalur yang diperuntukkan bagi calon murid yang memiliki prestasi akademik maupun non akademik yang dibuktikan dengan sertifikat atau piagam penghargaan asli.",
+            "Kegiatan ekstrakurikuler yang tersedia di SMK Negeri 1 Sorong antara lain Pramuka, Palang Merah Remaja (PMR), Mapala (Pecinta Alam), Paskibra, Basket, Futsal, Sepak Bola, Bulu Tangkis, Pencak Silat, dan Marching Band.",
+            "Berkas daftar ulang meliputi fotokopi SKL, Akte Kelahiran, Kartu Keluarga terbaru, KPS/PKH/KIP (jalur afirmasi), rapor semester 1-5, Sertifikat TKA, piagam prestasi (jalur prestasi), Materai Rp10.000 (1 lembar), serta Map merah untuk OAP atau Map biru untuk non-OAP.",
+            "Total kuota penerimaan peserta didik baru SMK Negeri 1 Sorong Tahun Ajaran 2026/2027 adalah sebanyak 684 peserta didik yang terbagi ke dalam 9 Program Keahlian."
         ],
         "Jawaban_Generated_(Hasil AI)": [    
-            "Halo! Saya asisten PPDB. Terdapat 9 jurusan yang bisa dipilih yaitu TKJ, AKL, OTKP, BDP, Multimedia, DPIB, BKP, Geomatika, dan Perhotelan. Semoga membantu!",
-            "Tentu, berikut informasinya: Untuk mendaftar, proses pendaftaran dilakukan secara online melalui website resmi atau datang langsung ke sekolah. Jika ada pertanyaan lain, silakan tanyakan.",
-            "Tentu, berikut adalah jawaban: Syarat masuk jurusan TKJ antara lain meliputi nilai rapot yang cukup, tidak buta warna, dan dinyatakan lulus tes fisik.",
-            "Pendaftaran mulai dibuka pada pertengahan tahun, biasanya sekitar bulan Juni.",
-            "SMKN 1 berlokasi di pusat Kota Sorong, tepatnya di Jl. Jendral Sudirman.",
-            "Halo! Saya asisten PPDB. Proses pendaftaran PPDB di SMKN 1 Sorong tidak dipungut biaya alias gratis.",
-            "Tentu saja! Ada jalur prestasi akademik dan non-akademik bagi siswa berprestasi.",
-            "Di SMKN 1 Sorong ada ekstrakurikuler wajib seperti Pramuka, dan pilihan seperti PMR atau Olahraga.",
-            "Anda perlu menyiapkan dokumen seperti SKHU, fotokopi KK, Akta kelahiran dan pas foto ukuran 3x4.",
-            "Tahun ini kuota yang tersedia adalah sekitar 360 siswa untuk semua jurusan yang ada."
+            "SMK Negeri 1 Sorong menyediakan 9 program keahlian yang dapat dipilih oleh calon peserta didik baru, antara lain: Akuntansi dan Keuangan Lembaga, Manajemen Perkantoran dan Layanan Bisnis, Pemasaran (Kelas Alfamart), Teknik Jaringan Komputer dan Telekomunikasi, Desain Komunikasi Visual, Pengembangan Perangkat Lunak dan Gim, Teknik Geologi Pertambangan, Teknik Perminyakan, dan Teknik Energi Terbarukan.",
+            "Proses pendaftaran PPDB dilakukan melalui dua tahapan, yaitu online dan offline. Pertama, calon peserta didik mendaftar secara online melalui website resmi spmbkota.sorongdigital.id. Setelah itu, calon peserta didik wajib datang langsung ke SMK Negeri 1 Sorong dengan membawa bukti pendaftaran dan dokumen persyaratan untuk dilakukan verifikasi oleh panitia.",
+            "Untuk mendaftar di program keahlian Teknik Jaringan Komputer dan Telekomunikasi (TJKT), sekolah tidak mempersyaratkan tes fisik maupun tes buta warna. Seluruh calon peserta didik mengikuti ketentuan umum yaitu usia maksimal 21 tahun serta mengikuti seleksi tes tertulis dan wawancara.",
+            "Jadwal pendaftaran PPDB di SMK Negeri 1 Sorong untuk Tahun Ajaran 2026/2027 dibuka pada tanggal 17 Juni 2026 hingga 20 Juni 2026.",
+            "Alamat lengkap SMK Negeri 1 Sorong terletak di Jl. Basuki Rahmat, Kilometer 8, Kelurahan Malaingkedi, Kecamatan Malaimsimsa, Kota Sorong, Provinsi Papua Barat Daya. Untuk pengumpulan dan verifikasi berkas, calon peserta didik dapat menuju gedung model kantor dua lantai berwarna biru di sebelah kiri gerbang masuk.",
+            "Calon peserta didik tidak dikenakan biaya sama sekali alias gratis saat melakukan pendaftaran PPDB maupun proses daftar ulang. SMK Negeri 1 Sorong juga tidak memungut biaya uang SPP.",
+            "Ya, SMK Negeri 1 Sorong menerima peserta didik baru melalui Jalur Prestasi. Jalur ini diperuntukkan bagi siswa yang memiliki prestasi akademik maupun non akademik dengan melampirkan bukti sertifikat atau piagam penghargaan asli.",
+            "Di SMK Negeri 1 Sorong terdapat berbagai kegiatan ekstrakurikuler untuk mengembangkan minat dan bakat peserta didik, antara lain Pramuka, PMR, Mapala, Paskibra, Basket, Futsal, Sepak Bola, Bulu Tangkis (Badminton), Pencak Silat, dan Marching Band.",
+            "Dokumen yang harus disiapkan saat daftar ulang antara lain fotokopi Surat Keterangan Lulus (SKL), Akta Kelahiran, KK terbaru, rapor semester 1 sampai 5, sertifikat TKA, piagam prestasi (jika ada), KPS/KIP (jika ada), 1 lembar materai Rp10.000, serta map merah untuk siswa OAP dan map biru untuk siswa non-OAP.",
+            "Jumlah kuota penerimaan peserta didik baru di SMK Negeri 1 Sorong pada Tahun Ajaran 2026/2027 adalah sebanyak 684 kursi yang tersebar di 9 program keahlian."
         ]
     }
 
