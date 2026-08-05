@@ -38,6 +38,9 @@
 
     <main class="h-[100dvh] w-full relative z-10 flex">
         
+        <!-- OVERLAY (Untuk menutup sidebar saat area luar disentuh di HP) -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-30 hidden transition-opacity duration-300 opacity-0 md:hidden cursor-pointer"></div>
+
         <!-- SIDEBAR (Riwayat Percakapan) -->
         <aside id="sidebar" class="w-80 bg-white/95 border-r border-slate-200/50 flex flex-col h-full flex-shrink-0 z-40 absolute md:relative transition-all duration-300 transform -translate-x-full md:translate-x-0 md:ml-0 shadow-[10px_0_30px_rgba(0,0,0,0.02)]">
             <!-- Top Section: Back and New Chat -->
