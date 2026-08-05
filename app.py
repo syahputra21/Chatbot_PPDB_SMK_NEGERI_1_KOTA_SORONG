@@ -386,8 +386,34 @@ def get_persistent_dataset_list():
 
 
 def get_ppdb_config():
+    # 1. SUMBER KEBENARAN UTAMA (VERCEL): Ambil config terbaru dari GitHub (Real-Time)
+    try:
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") or os.getenv("GITHUB_TOKEN"):
+            token = os.getenv("GITHUB_TOKEN")
+            repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+            url = f"https://api.github.com/repos/{repo}/contents/ppdb_config.json?_t={int(time.time())}"
+            headers = {
+                "User-Agent": "Chatbot-PPDB-SMKN1-Sorong",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache"
+            }
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=4) as res:
+                data = json.loads(res.read().decode())
+                if data.get("content"):
+                    content_str = base64.b64decode(data["content"]).decode("utf-8")
+                    github_config = json.loads(content_str)
+                    # Simpan/Timpa ke lokal sementara
+                    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                        json.dump(github_config, f, indent=4)
+    except Exception as e:
+        print(f"[GITHUB CONFIG WARNING] {e}")
+
+    # 2. Baca dari file lokal (yang sudah tersinkronisasi)
     if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r') as f:
+        with open(CONFIG_FILE, 'r', encoding="utf-8") as f:
             data = json.load(f)
             # Ensure defaults for new fields
             if "persyaratan" not in data:
@@ -467,9 +493,48 @@ def get_ppdb_config():
         ]
     }
 
+def sync_config_to_github():
+    """Sinkronisasi ppdb_config.json ke GitHub dengan pesan [skip ci] agar tersimpan permanen di Vercel"""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token or not os.path.exists(CONFIG_FILE):
+        return
+    repo = "syahputra21/Chatbot_PPDB_SMK_NEGERI_1_KOTA_SORONG"
+    url = f"https://api.github.com/repos/{repo}/contents/ppdb_config.json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Chatbot-PPDB-SMKN1-Sorong"
+    }
+    try:
+        sha = None
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as res:
+                data = json.loads(res.read().decode())
+                sha = data.get("sha")
+        except:
+            pass
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            content_b64 = base64.b64encode(f.read().encode("utf-8")).decode("utf-8")
+        payload = {
+            "message": "[skip ci] chore(config): sinkronisasi pengaturan informasi PPDB dari Admin",
+            "content": content_b64,
+            "branch": "main"
+        }
+        if sha:
+            payload["sha"] = sha
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="PUT")
+        with urllib.request.urlopen(req) as res:
+            print("[GITHUB SYNC] Konfigurasi PPDB berhasil disinkronkan ke GitHub.")
+    except Exception as e:
+        print(f"[GITHUB SYNC WARNING] Gagal sinkronisasi konfigurasi PPDB: {e}")
+
 def save_ppdb_config(data):
-    with open(CONFIG_FILE, 'w') as f:
+    with open(CONFIG_FILE, 'w', encoding="utf-8") as f:
         json.dump(data, f, indent=4)
+    # Panggil sinkronisasi ke GitHub agar perubahan tidak hilang di Vercel
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV") or os.getenv("GITHUB_TOKEN"):
+        threading.Thread(target=sync_config_to_github).start()
 
 # ---------------------------------------------------------
 # 2. INISIALISASI DATABASE (SQLite)
