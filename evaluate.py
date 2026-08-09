@@ -225,9 +225,7 @@ def run_evaluation():
         plt.grid(True, linestyle='-', alpha=0.7)
         plt.legend(loc='lower left')
         
-        # Menambahkan Teks Gambar 10 di Bawah
-        plt.figtext(0.5, 0.02, "Gambar 10. Grafik Hasil Pengujian BERTScore", ha="center", fontsize=16, fontfamily="serif", fontstyle="italic")
-        plt.tight_layout(rect=[0, 0.08, 1, 1]) 
+        plt.tight_layout() 
         
         # Tampilkan Jendela Grafik
         plt.show()
