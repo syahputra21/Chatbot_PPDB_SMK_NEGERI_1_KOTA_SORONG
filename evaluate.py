@@ -192,6 +192,53 @@ def run_evaluation():
     print(f"{C.GREEN}[SUKSES]{C.RESET} Output mentah sukses diamankan dalam: {C.BLUE}{excel_file}{C.RESET}")
     print(f"{C.DIM}         (Buka Excel, import file CSV ini untuk merapikan tabel Bab 4).{C.RESET}\n")
 
+    # 6. Menampilkan Grafik Hasil BERTScore (Visualisasi Bab 4)
+    try:
+        import matplotlib.pyplot as plt
+        print(f"{C.DIM}[INFO] Membuka jendela grafik pengujian BERTScore...{C.RESET}")
+        print(f"{C.DIM}       (Silakan tutup jendela grafik untuk menyelesaikan program){C.RESET}")
+        
+        # Persiapan Data
+        x_labels = [f"P{i+1}" for i in range(len(df))]
+        p_vals = df['Nilai Precision (P)'].tolist()
+        r_vals = df['Nilai Recall (R)'].tolist()
+        f1_vals = df['Nilai F1-Score'].tolist()
+
+        # Konfigurasi Canvas
+        plt.figure(figsize=(10, 6))
+        
+        # Plotting Garis Utama
+        plt.plot(x_labels, p_vals, marker='o', color='blue', label='Precision')
+        plt.plot(x_labels, r_vals, marker='s', color='green', label='Recall')
+        plt.plot(x_labels, f1_vals, marker='^', color='red', label='F1')
+
+        # Plotting Garis Rata-rata (Dotted Lines)
+        plt.axhline(y=avg_p, color='blue', linestyle='--', label='Avg Precision')
+        plt.axhline(y=avg_r, color='green', linestyle='--', label='Avg Recall')
+        plt.axhline(y=avg_f1, color='red', linestyle='--', label='Avg F1')
+
+        # Formatting Layout
+        plt.title('Grafik Pengujian BERTScore', fontsize=12, fontweight='bold', pad=10)
+        plt.xlabel('Pertanyaan', fontsize=10, labelpad=10)
+        plt.ylabel('Score', fontsize=10, labelpad=10)
+        plt.xticks(rotation=45)
+        plt.grid(True, linestyle='-', alpha=0.7)
+        plt.legend(loc='lower left')
+        
+        # Menambahkan Teks Gambar 10 di Bawah
+        plt.figtext(0.5, 0.02, "Gambar 10. Grafik Hasil Pengujian BERTScore", ha="center", fontsize=16, fontfamily="serif", fontstyle="italic")
+        plt.tight_layout(rect=[0, 0.08, 1, 1]) 
+        
+        # Tampilkan Jendela Grafik
+        plt.show()
+        
+    except ImportError:
+        print(f"\n{C.YELLOW}[TIPS] Grafik visual bisa ditampilkan secara otomatis jika pustaka 'matplotlib' diinstall.{C.RESET}")
+        print(f"       Ketik perintah ini di terminal: {C.BLUE}pip install matplotlib{C.RESET}\n")
+    except Exception as e:
+        print(f"\n{C.RED}[WARNING] Gagal menampilkan grafik: {e}{C.RESET}\n")
+
+
 if __name__ == "__main__":
     try:
         run_evaluation()
